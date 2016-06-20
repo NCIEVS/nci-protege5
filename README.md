@@ -2,8 +2,12 @@
 
 ## Build
 
-Building is pretty easy, first build Protege 5 then build the protege
-server
+# NCI Protege Metaproject GUI
+
+## Build
+
+These simple steps enable the building of Protege 5, the client and
+server, and the metaproject GUI.
 
 ### Protege 5
 
@@ -14,11 +18,22 @@ mkdir <my-top-level>
 
 cd <my-top-level>
 
-git clone https://github.com/bdionne/protege.git
+git clone https://github.com/protegeproject/protege.git
 
-cd protege
+cd protege/
 
-git checkout nci-lucene-search
+git checkout 5.0.0
+
+mvn clean install
+
+````
+
+### Metaproject
+
+````
+cd ..
+
+git clone https://github.com/bdionne/metaproject.git
 
 mvn clean install
 
@@ -27,20 +42,45 @@ mvn clean install
 ### Protege Server
 
 ````
-cd ../<my-top-level>
+cd ../
 
 git clone https://github.com/bdionne/protege-server.git
 
-cd protege-server
+cd protege-server/
+
+git checkout -b metaproject-integration origin/metaproject-integration
 
 mvn clean install
 ````
 
-Now the server jar is needed by the protege client, so copy it to the
+### Protege Client
+
+````
+cd ..
+
+git clone https://github.com/bdionne/protege-client.git
+
+cd protege-client/
+
+git checkout -b metaproject-integration-edittab origin/metaproject-integration-edittab
+
+mvn clean install
+````
+
+
+
+Now the client/server jars are needed by the protege client, so copy them to the
 bundles:
 
 ````
-cp target/protege-server-3.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT/bundles
+cp target/protege-client-3.0.0-SNAPSHOT.jar
+../protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT/bundles
+
+cd ../protege-server
+
+cp target/protege-server-3.0.0-SNAPSHOT.jar
+../protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT/bundles
+
 ````
 
 ### Running
@@ -48,7 +88,7 @@ cp target/protege-server-3.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/pr
 First start the server:
 
 ````
-cd target/server-distribution/server
+cd <my-top-level>/protege-server/target/server-distribution/server
 
 ../run.sh
 ````
@@ -61,12 +101,5 @@ cd
 ./run.sh
 ````
 
-When the app comes up, go into `Launcher/preferences` and select the
-plugins tab. Change the registry url to:
-
-````
-https://raw.githubusercontent.com/bdionne/autoupdate/master/plugins.repository
-````
-Now under `File` select `Check for Plugins` and in there check the
-lucene search and protege client plugins. After these load a restart
-is required.
+When the app comes up, use `File/OpenFromServer...`, connect and the
+metaproject gui panel will be usable
