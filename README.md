@@ -76,12 +76,12 @@ bundles:
 
 ````
 cp target/protege-client-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT/bundles
+../protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0/bundles
 
 cd ../protege-server
 
 cp target/protege-server-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT/bundles
+../protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0/bundles
 
 ````
 
@@ -98,7 +98,7 @@ cd <my-top-level>/protege-server/target/server-distribution/server
 Now run protege:
 ````
 cd
-<my-top-level>/protege/protege-desktop/target/protege-5.0.0-beta-22-SNAPSHOT-platform-independent/Protege-5.0.0-beta-22-SNAPSHOT
+<my-top-level>/protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0
 
 ./run.sh
 ````
