@@ -35,6 +35,8 @@ cd ..
 
 git clone https://github.com/bdionne/metaproject.git
 
+cd metaproject
+
 mvn clean install
 
 ````
