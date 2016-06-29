@@ -18,11 +18,11 @@ mkdir <my-top-level>
 
 cd <my-top-level>
 
-git clone https://github.com/protegeproject/protege.git
+git clone https://github.com/bdionne/protege.git
 
 cd protege/
 
-git checkout 5.0.0
+git checkout -b 5.0.0-history origin/5.0.0-history
 
 mvn clean install
 
