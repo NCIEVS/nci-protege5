@@ -22,7 +22,22 @@ git clone https://github.com/bdionne/protege.git
 
 cd protege/
 
-git checkout -b 5.0.0-history origin/5.0.0-history
+git checkout -b 5.0.1-history-search origin/5.0.1-history-search
+
+mvn clean install
+
+````
+
+### Lucene Search
+
+````
+cd ..
+
+git clone https://github.com/bdionne/lucene-search-plugin.git
+
+cd lucene-search-plugin
+
+git checkout -b nci-lucene-search origin/nci-lucene-search
 
 mvn clean install
 
@@ -53,6 +68,10 @@ cd protege-server/
 git checkout -b metaproject-integration origin/metaproject-integration
 
 mvn clean install
+
+cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar
+../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
+
 ````
 
 ### Protege Client
@@ -76,12 +95,12 @@ bundles:
 
 ````
 cp target/protege-client-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0/bundles
+../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 
 cd ../protege-server
 
 cp target/protege-server-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0/bundles
+../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 
 ````
 
