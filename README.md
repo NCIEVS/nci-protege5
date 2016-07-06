@@ -69,8 +69,6 @@ git checkout -b metaproject-integration origin/metaproject-integration
 
 mvn clean install
 
-cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 
 ````
 
@@ -102,6 +100,13 @@ cd ../protege-server
 cp target/protege-server-3.0.0-SNAPSHOT.jar
 ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 
+cd ../lucene-search-plugin
+
+cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar
+../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
+
+
+
 ````
 
 ### Running
@@ -117,7 +122,7 @@ cd <my-top-level>/protege-server/target/server-distribution/server
 Now run protege:
 ````
 cd
-<my-top-level>/protege/protege-desktop/target/protege-5.0.0-platform-independent/Protege-5.0.0
+<my-top-level>/protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT
 
 ./run.sh
 ````
