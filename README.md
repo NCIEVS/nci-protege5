@@ -33,7 +33,7 @@ mvn clean install
 ````
 cd ..
 
-git clone https://github.com/bdionne/lucene-search-plugin.git
+git clone https://github.com/protegeproject/lucene-search-plugin.git
 
 cd lucene-search-plugin
 
@@ -51,6 +51,19 @@ cd ..
 git clone https://github.com/bdionne/metaproject.git
 
 cd metaproject
+
+mvn clean install
+
+````
+
+### EditTab
+
+````
+cd ..
+
+git clone https://github.com/bdionne/nci-edit-tab.git
+
+cd nci-edit-tab
 
 mvn clean install
 
@@ -103,6 +116,11 @@ cp target/protege-server-3.0.0-SNAPSHOT.jar
 cd ../lucene-search-plugin
 
 cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar
+../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
+
+cd ../nci-edit-tab
+
+cp target/nci-edit-tab-0.0.4-SNAPSHOT.jar
 ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 
 
