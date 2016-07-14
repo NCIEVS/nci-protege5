@@ -74,11 +74,11 @@ mvn clean install
 ````
 cd ../
 
-git clone https://github.com/bdionne/protege-server.git
+git clone https://github.com/protegeproject/protege-server.git
 
 cd protege-server/
 
-git checkout -b metaproject-integration origin/metaproject-integration
+git checkout -b http-metaproject-integration origin/http-metaproject-integration
 
 mvn clean install
 
@@ -90,11 +90,11 @@ mvn clean install
 ````
 cd ..
 
-git clone https://github.com/bdionne/protege-client.git
+git clone https://github.com/protegeproject/protege-client.git
 
 cd protege-client/
 
-git checkout -b metaproject-integration-edittab origin/metaproject-integration-edittab
+git checkout -b http-metaproject-integration-edittab origin/http-metaproject-integration
 
 mvn clean install
 ````
