@@ -94,7 +94,7 @@ git clone https://github.com/protegeproject/protege-client.git
 
 cd protege-client/
 
-git checkout -b http-metaproject-integration-edittab origin/http-metaproject-integration
+git checkout -b http-metaproject-integration origin/http-metaproject-integration
 
 mvn clean install
 ````
