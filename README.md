@@ -48,7 +48,7 @@ mvn clean install
 ````
 cd ..
 
-git clone https://github.com/bdionne/metaproject.git
+git clone https://github.com/protegeproject/metaproject.git
 
 cd metaproject
 
