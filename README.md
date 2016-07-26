@@ -22,7 +22,7 @@ git clone https://github.com/bdionne/protege.git
 
 cd protege/
 
-git checkout -b 5.0.1-history-search origin/5.0.1-history-search
+git checkout -b search-api origin/search-api
 
 mvn clean install
 
