@@ -1,149 +1,56 @@
 # NCI Protege 5
 
+NCI Protege 5 is the port of NCI's terminology tools from protege 3.4
+to Protege 5.0. This is a collaboration between NCI, Stanford University, and
+Clark&Parsia, LLC.
+
+This repository is a place for various scripts, notes, etc.. that
+pulls together work from several repositories, [nci-edit-tab][1],
+[metaproject][2], [protege-client][3], [protege-server][4],
+[lucene-search-plugin][5], [pellet server][7], and [protege][6] itself.
+
 ## Build
 
-# NCI Protege Metaproject GUI
+To build, a simple [script][8] can be executed that will pull all the
+code from the various repositories and run maven. If successful, it
+will produce a directory named `nci-protege5` in which there will also
+be a zip file named `nci-protege5-<today's date>`.
 
-## Build
-
-These simple steps enable the building of Protege 5, the client and
-server, and the metaproject GUI.
-
-### Protege 5
-
-Start with a top level directory to make clean up easier:
+This zip contains two scripts:
 
 ````
-mkdir <my-top-level>
-
-cd <my-top-level>
-
-git clone https://github.com/bdionne/protege.git
-
-cd protege/
-
-git checkout -b search-api origin/search-api
-
-mvn clean install
-
+./run-server.sh
 ````
 
-### Lucene Search
+and
 
 ````
-cd ..
-
-git clone https://github.com/protegeproject/lucene-search-plugin.git
-
-cd lucene-search-plugin
-
-git checkout -b nci-lucene-search origin/nci-lucene-search
-
-mvn clean install
-
+./run_protege.sh
 ````
 
-### Metaproject
+The first starts the server and the second will run the editor. A
+small sample database is included with the server.
 
-````
-cd ..
+## Releases
 
-git clone https://github.com/protegeproject/metaproject.git
-
-cd metaproject
-
-mvn clean install
-
-````
-
-### EditTab
-
-````
-cd ..
-
-git clone https://github.com/bdionne/nci-edit-tab.git
-
-cd nci-edit-tab
-
-mvn clean install
-
-````
-
-### Protege Server
-
-````
-cd ../
-
-git clone https://github.com/protegeproject/protege-server.git
-
-cd protege-server/
-
-git checkout -b http-metaproject-integration origin/http-metaproject-integration
-
-mvn clean install
-
-
-````
-
-### Protege Client
-
-````
-cd ..
-
-git clone https://github.com/protegeproject/protege-client.git
-
-cd protege-client/
-
-git checkout -b http-metaproject-integration origin/http-metaproject-integration
-
-mvn clean install
-````
+The branches of these repositories being worked on change from time to time, so we're
+producing daily [releases][9]. The releases include the `zip` file, so
+one can just download those and they should run on most
+platforms. Each release is based on a tag of this repository so if
+there are questions about which code was included the source scripts
+can be downloaded and run locally
 
 
 
-Now the client/server jars are needed by the protege client, so copy them to the
-bundles:
 
-````
-cp target/protege-client-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
+----
+[1]: https://github.com/bdionne/nci-edit-tab
+[2]: https://github.com/protegeproject/metaproject
+[3]: https://github.com/protegeproject/protege-client
+[4]: https://github.com/protegeproject/protege-server
 
-cd ../protege-server
-
-cp target/protege-server-3.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
-
-cd ../lucene-search-plugin
-
-cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
-
-cd ../nci-edit-tab
-
-cp target/nci-edit-tab-0.0.4-SNAPSHOT.jar
-../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
-
-
-
-````
-
-### Running
-
-First start the server:
-
-````
-cd <my-top-level>/protege-server/target/server-distribution/server
-
-../run.sh
-````
-
-Now run protege:
-````
-cd
-<my-top-level>/protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT
-
-./run.sh
-````
-
-When the app comes up, use `File/OpenFromServer...`, connect and the
-metaproject gui panel will be usable
+[5]: https://github.com/protegeproject/lucene-search-plugin
+[6]: https://github.com/protegeproject/protege
+[7]: https://github.com/Complexible/pellet/tree/service
+[8]: https://github.com/NCIEVS/nci-protege5/blob/master/scripts/build.sh
+[9]: https://github.com/NCIEVS/nci-protege5/releases
