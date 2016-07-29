@@ -24,6 +24,7 @@ cd protege-server
 git checkout -b http-metaproject-integration origin/http-metaproject-integration
 mvn clean install -DskipTests=true
 cp target/protege-server*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
+cp -R root target/server-distribution/server
 cd ..
 git clone https://github.com/protegeproject/protege-client.git
 cd protege-client
@@ -37,5 +38,8 @@ cd nci-edit-tab
 mvn clean install -DskipTests=true
 cp target/nci-edit-tab*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/bundles
 cd ../
-zip -r nci-protege5-$NOW.zip protege protege-server ../run-server.sh ../run-protege.sh
+cp ../run-protege.sh .
+cp ../run-server.sh .
+zip -r nci-protege5-$NOW.zip protege protege-server run-server.sh run-protege.sh
+tar -cvzf nci-protege5-$NOW.tar.gz protege protege-server run-server.sh run-protege.sh
 
