@@ -6,7 +6,7 @@ mkdir nci-protege5
 cd nci-protege5
 git clone https://github.com/bdionne/protege.git
 cd protege
-git checkout $TAG
+git checkout 8182b5
 mvn clean install -DskipTests=true
 mkdir protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
 cp ../../run-editor.sh protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/run.sh
@@ -44,7 +44,7 @@ cp -R root target/server-distribution/server
 cd ..
 git clone https://github.com/bdionne/protege-client.git
 cd protege-client
-git checkout $TAG
+git checkout 13979f
 mvn clean install -DskipTests=true
 cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
 cd ..
