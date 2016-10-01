@@ -45,12 +45,12 @@ can be downloaded and run locally
 
 ----
 [1]: https://github.com/bdionne/nci-edit-tab
-[2]: https://github.com/protegeproject/metaproject
-[3]: https://github.com/protegeproject/protege-client
-[4]: https://github.com/protegeproject/protege-server
+[2]: https://github.com/bdionne/metaproject
+[3]: https://github.com/bdionne/protege-client
+[4]: https://github.com/bdionne/protege-server
 
-[5]: https://github.com/protegeproject/lucene-search-plugin
-[6]: https://github.com/protegeproject/protege
+[5]: https://github.com/bdionne/lucene-search-plugin
+[6]: https://github.com/bdionne/protege
 [7]: https://github.com/Complexible/pellet/tree/service
 [8]: https://github.com/NCIEVS/nci-protege5/blob/master/scripts/build.sh
 [9]: https://github.com/NCIEVS/nci-protege5/releases
