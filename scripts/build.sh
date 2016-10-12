@@ -47,12 +47,6 @@ cd protege-client
 git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
-cd ..
-git clone https://github.com/bdionne/nci-edit-tab.git
-cd nci-edit-tab
-git checkout $TAG
-mvn clean install -DskipTests=true
-cp target/nci-edit-tab*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
 cd ../
 git clone https://github.com/bdionne/pellet.git
 cd pellet
