@@ -8,50 +8,50 @@ git clone https://github.com/bdionne/protege.git
 cd protege
 git checkout $TAG
 mvn clean install -DskipTests=true
-mkdir protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
-cp ../../run-editor.sh protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/run.sh
+mkdir protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
+cp ../../run-editor.sh protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/run.sh
 cd ..
 git clone https://github.com/bdionne/metaproject.git
 cd metaproject
 git checkout $TAG
 mvn clean install -DskipTests=true
-cp target/metaproject-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/metaproject-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
 git clone https://github.com/bdionne/csv-export-plugin.git
 cd csv-export-plugin
 git checkout $TAG
 mvn clean install
-cp target/csv-export-plugin-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/csv-export-plugin-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
 git clone https://github.com/bdionne/lucene-search-plugin.git
 cd lucene-search-plugin
 git checkout $TAG
 mvn clean install -DskipTests=true
-cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/lucene-search-plugin-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
 git clone https://github.com/bdionne/lucene-search-tab.git
 cd lucene-search-tab
 git checkout $TAG
 mvn clean install
-cp target/lucene-search-tab-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/lucene-search-tab-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
 git clone https://github.com/bdionne/protege-server.git
 cd protege-server
 git checkout $TAG
 mvn clean install -DskipTests=true
-cp target/protege-server*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/protege-server*.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cp -R root target/server-distribution/server
 cd ..
 git clone https://github.com/bdionne/protege-client.git
 cd protege-client
 git checkout $TAG
 mvn clean install -DskipTests=true
-cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ../
 git clone https://github.com/bdionne/pellet.git
 cd pellet
 mvn clean install -DskipTests=true
-cp protege/target/pellet-protege-2.4.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.0.1-SNAPSHOT-platform-independent/Protege-5.0.1-SNAPSHOT/plugins
+cp protege/target/pellet-protege-2.4.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ../
 cp ../run-protege.sh .
 cp ../run-server.sh .
