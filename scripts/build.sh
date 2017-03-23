@@ -17,12 +17,6 @@ git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/metaproject-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
-git clone https://github.com/bdionne/csv-export-plugin.git
-cd csv-export-plugin
-git checkout $TAG
-mvn clean install
-cp target/csv-export-plugin-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
-cd ..
 git clone https://github.com/bdionne/lucene-search-plugin.git
 cd lucene-search-plugin
 git checkout $TAG

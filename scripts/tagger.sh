@@ -9,9 +9,6 @@ git push bobd $TAG
 cd ../metaproject
 git tag -a $TAG -m "$MSG"
 git push bobd $TAG
-cd ../csv-export-plugin
-git tag -a $TAG -m "$MSG"
-git push bobd $TAG
 cd ../lucene-search-plugin
 git tag -a $TAG -m "$MSG"
 git push bobd $TAG
