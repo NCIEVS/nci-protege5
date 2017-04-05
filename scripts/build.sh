@@ -34,7 +34,6 @@ cd protege-server
 git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/protege-server*.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
-cp -R root target/server-distribution/server
 cd ..
 git clone https://github.com/bdionne/protege-client.git
 cd protege-client
