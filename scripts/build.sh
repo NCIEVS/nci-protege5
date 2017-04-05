@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 NOW=`date +"%m_%d_%Y"`
 TAG=$1
 rm -Rf nci-protege5
