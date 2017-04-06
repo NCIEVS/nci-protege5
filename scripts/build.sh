@@ -17,12 +17,6 @@ git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/metaproject-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ..
-git clone https://github.com/bdionne/lucene-search-tab.git
-cd lucene-search-tab
-git checkout $TAG
-mvn clean install
-cp target/lucene-search-tab-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
-cd ..
 git clone https://github.com/bdionne/protege-server.git
 cd protege-server
 git checkout $TAG
