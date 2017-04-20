@@ -6,6 +6,9 @@ echo $MSG
 cd protege
 git tag -d $TAG
 git push bobd :refs/tags/$TAG
+cd ../owlapi
+git tag -d $TAG
+git push bobd :refs/tags/$TAG
 cd ../metaproject
 git tag -d $TAG
 git push bobd :refs/tags/$TAG

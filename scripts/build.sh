@@ -4,6 +4,11 @@ TAG=$1
 rm -Rf nci-protege5
 mkdir nci-protege5
 cd nci-protege5
+git clone https://github.com/bdionne/owlapi.git
+cd owlapi
+git checkout $TAG
+mvn clean install -DskipTests=true
+cd ..
 git clone https://github.com/bdionne/protege.git
 cd protege
 git checkout $TAG

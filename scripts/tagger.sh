@@ -3,7 +3,10 @@ NOW=`date +"%m_%d_%Y"`
 TAG=$1
 MSG=$2
 echo $MSG
-cd protege
+cd owlapi
+git tag -a $TAG -m "$MSG"
+git push bobd $TAG
+cd ../protege
 git tag -a $TAG -m "$MSG"
 git push bobd $TAG
 cd ../metaproject
