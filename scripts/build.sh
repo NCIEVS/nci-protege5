@@ -34,11 +34,11 @@ git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ../
-##git clone https://github.com/bdionne/pellet.git
-##cd pellet
-##mvn clean install -DskipTests=true
-##cp protege/target/pellet-protege-2.4.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
-##cd ../
+git clone https://github.com/bdionne/pellet.git
+cd pellet
+mvn clean install -DskipTests=true
+cp protege/target/pellet-protege-2.4.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
+cd ../
 cp ../run-protege.sh .
 cp ../run-server.sh .
 zip -r nci-protege5-$NOW.zip protege protege-server run-server.sh run-protege.sh
