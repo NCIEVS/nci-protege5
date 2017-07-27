@@ -11,8 +11,17 @@ pulls together work from several repositories, [nci-edit-tab][1],
 
 ## Build
 
-To build, a simple [script][8] can be executed that will pull all the
-code from the various repositories and run maven. If successful, it
+To build, a simple [script][8] can be executed, .eg.:
+
+````
+cd scripts
+
+./build.sh nci-1.0081 ncievs
+
+````
+where `nci-1.0081` is a tag, and `ncievs` is the name of the GitHub you wish to build from.
+
+This will pull all the code from the various repositories and run maven. If successful, it
 will produce a directory named `nci-protege5` in which there will also
 be a zip file named `nci-protege5-<today's date>`.
 
