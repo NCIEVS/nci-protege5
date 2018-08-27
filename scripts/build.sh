@@ -32,6 +32,10 @@ cd ..
 git clone https://github.com/$TARGET/protege-client.git
 cd protege-client
 git checkout $TAG
+
+mvn install:install-file -Dfile=../protege/protege-editor-core/lib/nonosgi-registry.jar -DgroupId=org.eclipse.equinox -DartifactId=org.eclipse.equinox.nonosgi.registry -Dversion=1.0.0 -Dpackaging=jar -DlocalRepositoryPath=~/.m2/repository
+
+
 mvn clean install -DskipTests=true
 cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.1.1-SNAPSHOT-platform-independent/Protege-5.1.1-SNAPSHOT/plugins
 cd ../
