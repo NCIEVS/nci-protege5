@@ -5,26 +5,24 @@ MSG=$2
 TARGET=$3
 echo $MSG
 cd ../..
-cd owlapi
+cd evs-history
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../protege
+cd ../lucene-search-tab
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../metaproject
+cd ../metaproject-admin
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../protege-server
+cd ../nci-edit-tab
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../protege-client
+cd ../revision-history
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../pellet
+cd ../sparql-query-plugin
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../nci-protege5
-git tag -a $TAG -m "$MSG"
-git push $TARGET $TAG
+
 
 
