@@ -8,15 +8,15 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 cd "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-java -Xmx5000M -Xms2000M \
+java -Xmx8000M -Xms2000M \
      -Xss16M \
      -Dlogback.configurationFile=conf/logback.xml \
      -DentityExpansionLimit=100000000 \
      -Dfile.encoding=UTF-8 \
-     -Djava.util.prefs.PreferencesFactory=org.protege.prefs.FileBackingStorePrefsFactory \
+     -Djava.util.prefs.PreferencesFactory=org.protege.editor.core.prefs.FileBackingStorePrefsFactory \
      -XX:CompileCommand=exclude,javax/swing/text/GlyphView,getBreakSpot \
      -classpath lib/*:bundles/*:bin/*:/plugins/* \
-     $CMD_OPTIONS org.protege.osgi.framework.Launcher $1
+     $CMD_OPTIONS org.protege.editor.core.ProtegeApplication $1
 
 
 
