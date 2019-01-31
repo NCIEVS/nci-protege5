@@ -40,11 +40,11 @@ git checkout $TAG
 mvn clean install -DskipTests=true
 cp target/protege-client*.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
 cd ../
-git clone https://github.com/$TARGET/pellet.git
-cd pellet
+git clone https://github.com/$TARGET/explanation-workbench.git
+cd explanation-workbench
 git checkout $TAG
 mvn clean install -DskipTests=true
-cp protege/target/pellet-protege-2.4.1-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
+cp target/explanation-workbench*SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/lib
 cd ../
 cp ../run-protege.sh .
 cp ../run-server.sh .

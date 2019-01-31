@@ -5,7 +5,7 @@ TARGET=$2
 cd nci-protege5
 
 
-for p in lucene-search-tab metaproject-admin nci-edit-tab revision-history sparql-query-plugin evs-history
+for p in lucene-search-tab metaproject-admin revision-history sparql-query-plugin evs-history nci-edit-tab
 do
     echo Building $p ...
     git clone https://github.com/$TARGET/$p.git

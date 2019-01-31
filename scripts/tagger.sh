@@ -5,7 +5,10 @@ MSG=$2
 TARGET=$3
 echo $MSG
 cd ../..
-cd binaryowl
+cd explanation-workbench
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
+cd ../binaryowl
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
 cd ../owlapi

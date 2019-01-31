@@ -14,3 +14,7 @@ hs_err_pid*
 .DS_Store
 nci-protege5
 *~
+
+*.owl
+scripts/nci-protege5
+scripts/nci-protege5-pellet
