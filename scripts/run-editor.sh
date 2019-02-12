@@ -14,7 +14,6 @@ java -Xmx8000M -Xms2000M \
      -DentityExpansionLimit=100000000 \
      -Dfile.encoding=UTF-8 \
      -Djava.util.prefs.PreferencesFactory=org.protege.editor.core.prefs.FileBackingStorePrefsFactory \
-     -XX:CompileCommand=exclude,javax/swing/text/GlyphView,getBreakSpot \
      -classpath lib/*:bundles/*:bin/*:/plugins/* \
      $CMD_OPTIONS org.protege.editor.core.ProtegeApplication $1
 
