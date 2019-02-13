@@ -11,6 +11,7 @@ cd "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 java -Xmx8000M -Xms2000M \
      -Xss16M \
      -Dlogback.configurationFile=conf/logback.xml \
+     -Dprotege.logging.level=info \
      -DentityExpansionLimit=100000000 \
      -Dfile.encoding=UTF-8 \
      -Djava.util.prefs.PreferencesFactory=org.protege.editor.core.prefs.FileBackingStorePrefsFactory \
