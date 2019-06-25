@@ -50,4 +50,4 @@ cp ../run-protege.sh .
 cp ../run-server.sh .
 zip -r nci-protege5-$NOW.zip protege protege-server run-server.sh run-protege.sh
 tar -cvzf nci-protege5-$NOW.tar.gz protege protege-server run-server.sh run-protege.sh
-
+rm -r $HOME/.m2/repository/org/apache/struts
