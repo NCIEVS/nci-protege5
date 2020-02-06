@@ -20,12 +20,6 @@ git push $TARGET :refs/tags/$TAG
 cd ../metaproject
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
-cd ../protege-server
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
-cd ../protege-client
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
 cd ../pellet
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG

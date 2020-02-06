@@ -20,12 +20,6 @@ git push $TARGET $TAG
 cd ../metaproject
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../protege-server
-git tag -a $TAG -m "$MSG"
-git push $TARGET $TAG
-cd ../protege-client
-git tag -a $TAG -m "$MSG"
-git push $TARGET $TAG
 cd ../pellet
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
