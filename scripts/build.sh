@@ -18,6 +18,11 @@ cd owlapi
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
+git clone https://github.com/$TARGET/metaproject.git
+cd metaproject
+git checkout $TAG
+mvn clean install -DskipTests=true
+cd ..
 git clone https://github.com/$TARGET/protege.git
 cd protege
 git checkout $TAG
@@ -27,12 +32,7 @@ cp ../../run-editor.sh protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-in
 cd protege-editor-owl/target/server-distribution
 cp -R server ../../../../protege-server/target/server-distribution
 cd ../../..
-cd ..
-git clone https://github.com/$TARGET/metaproject.git
-cd metaproject
-git checkout $TAG
-mvn clean install -DskipTests=true
-cp target/metaproject-1.0.0-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
+cp ../metaproject/target/metaproject-1.0.1-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
 cd ../
 git clone https://github.com/$TARGET/explanation-workbench.git
 cd explanation-workbench
