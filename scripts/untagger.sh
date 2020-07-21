@@ -20,12 +20,6 @@ git push $TARGET :refs/tags/$TAG
 cd ../metaproject
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
-cd ../pellet
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
-cd ../nci-protege5
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
 
 
 
