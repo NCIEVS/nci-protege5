@@ -4,7 +4,7 @@ TAG=$1
 MSG=$2
 TARGET=$3
 echo $MSG
-cd ../..
+cd ../../projs
 cd explanation-workbench
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
@@ -20,7 +20,7 @@ git push $TARGET $TAG
 cd ../metaproject
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
-cd ../nci-protege5
+cd ../../nci-protege5
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
 
