@@ -8,13 +8,13 @@ cd nci-protege5
 mkdir protege-server
 mkdir protege-server/target
 mkdir protege-server/target/server-distribution
-git clone https://github.com/$TARGET/binaryowl.git
-cd binaryowl
+git clone https://github.com/$TARGET/owlapi.git
+cd owlapi
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
-git clone https://github.com/$TARGET/owlapi.git
-cd owlapi
+git clone https://github.com/$TARGET/binaryowl.git
+cd binaryowl
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
