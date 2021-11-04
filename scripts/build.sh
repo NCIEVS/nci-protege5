@@ -32,7 +32,7 @@ cp ../../run-editor.sh protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-in
 cd protege-editor-owl/target/server-distribution
 cp -R server ../../../../protege-server/target/server-distribution
 cd ../../..
-cp ../metaproject/target/metaproject-1.0.1-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
+cp ../metaproject/target/metaproject-1.0.2-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
 cd ../
 git clone https://github.com/$TARGET/explanation-workbench.git
 cd explanation-workbench
