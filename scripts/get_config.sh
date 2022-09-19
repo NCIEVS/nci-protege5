@@ -17,7 +17,7 @@ do
 done
 echo -n ${res%?}
 ## AUTH=`echo -n ${res%?} | openssl enc -base64 | tr -d "\n"`
-AUTH=`echo ${res%?} | tr -d "\n" | openssl enc -base64`
+AUTH=`echo ${res%?} | tr -d "\n" | openssl enc -base64 -A`
 
 #if troubleshooting, uncomment the following line
 #echo $AUTH
