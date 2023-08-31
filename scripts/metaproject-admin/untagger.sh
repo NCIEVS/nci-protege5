@@ -1,0 +1,26 @@
+#!/bin/sh
+NOW=`date +"%m_%d_%Y"`
+TAG=$1
+MSG=$2
+TARGET=$3
+echo $MSG
+cd binaryowl
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../owlapi
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../protege
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../metaproject
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../metaproject-admin
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+
+
+
+
+
