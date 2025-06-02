@@ -8,6 +8,9 @@ cd ../../projs
 cd binaryowl
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
+cd ../xmlcatalog
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
 cd ../owlapi
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG

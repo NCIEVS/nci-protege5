@@ -8,6 +8,9 @@ cd ../../projs
 cd binaryowl
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
+cd ../xmlcatalog
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
 cd ../owlapi
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG

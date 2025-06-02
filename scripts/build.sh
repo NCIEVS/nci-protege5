@@ -18,6 +18,11 @@ cd binaryowl
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
+git clone https://github.com/$TARGET/xmlcatalog.git
+cd xmlcatalog
+git checkout $TAG
+mvn clean install -DskipTests=true
+cd ..
 git clone https://github.com/$TARGET/metaproject.git
 cd metaproject
 git checkout $TAG
