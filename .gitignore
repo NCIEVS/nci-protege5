@@ -18,3 +18,4 @@ nci-protege5
 *.owl
 scripts/nci-protege5
 scripts/nci-protege5-pellet
+scripts/metaproject-admin/meta-admin-app
