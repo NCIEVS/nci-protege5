@@ -100,3 +100,101 @@ Roughly in dependency order:
 | Vendored format parsers to keep | `owlapi/parsers`, `owlapi/rio`, `owlapi/oboformat`, `binaryowl` |
 | Read-side Virtuoso query plugin | `sparql-query-plugin/src/main/java/org/protege/editor/owl/rdf/RemoteSparqlReasoner.java` |
 | In-memory classifier (defer) | `nci-curator/src/main/java/gov/nih/nci/curator/owlapi/KnowledgeBase.java` |
+
+---
+
+# Design decisions — commit-coordination service (2026-09-04 session)
+
+This section records decisions made after grounding the review in `nci-edit-tab`, `metaproject`, and `evs-history`. It supersedes the earlier open question in finding #4 ("what replaces revisions").
+
+## Decision 1: Keep a slim commit-coordination service in front of Virtuoso
+
+Clients do **not** write to Virtuoso directly. A "commit" in this system is a **semantic transaction**, not an axiom. `merge()`, `completeRetire()`, and `splitClass()` in `nci-edit-tab/.../NCIEditTab.java` each assemble a `List<OWLOntologyChange>`, apply it atomically, and wrap it in a `CommitBundleImpl(baseRevision, commit)`. Writing those add/remove triples straight to Virtuoso with SPARQL 1.1 Update would lose the atomic boundary, and a half-applied merge/retire is a data-integrity failure.
+
+The service keeps the `CommitBundle` as the transaction unit and wire contract, but its internals are rewritten:
+
+- Replace Java native serialization (`ObjectInputStream`/`ObjectOutputStream` of `CommitBundle`/`ChangeHistory`) — an untrusted-deserialization RCE liability (OWASP A08) — with a typed JSON/protobuf change payload.
+- Translate the accepted transaction into a **complete, non-lossy OWL 2 → RDF** write into Virtuoso (replacing the lossy `ConvertToRdf`).
+- Virtuoso becomes the **fact store**; the service remains the **system of record for transactions**.
+
+Responsibilities the service must own (none of which raw Virtuoso/SPARQL provide):
+
+| Responsibility | Where it lives today |
+|---|---|
+| Atomic multi-axiom transaction | `CommitBundle` apply |
+| Optimistic concurrency | `ConflictDetectionFilter` (baseRevision vs head) |
+| Permission enforcement | `AccessControlFilter` → `metaproject.isOperationAllowed(op, project, user)` |
+| Workflow gating (pre-merge / pre-retire approval) | pre-state roots + marker annotations |
+| EVS history + audit | `CodeGenHandler.recordEvsHistory` |
+
+## Decision 2: Workflow/approval state stays as data in the graph
+
+The modeler→manager approval state is already stored as **ontology data, not server session state**. A pre-merge is `SubClassOf(source, PRE_MERGE_ROOT)` plus `MERGE_TARGET`/`MERGE_SOURCE` annotations; `isPreMerged(cls)` is just `isSubClass(cls, PRE_MERGE_ROOT)` (same pattern for `PRE_RETIRE_ROOT`). This maps directly and losslessly into RDF, so the workflow state travels in the triple store for free.
+
+The service therefore does **not** need a separate approval queue/database — it needs to **enforce the legal transitions**:
+
+- Modeler → may add `PRE_MERGE_ROOT` / `PRE_RETIRE_ROOT` edges (gated by the relevant `metaproject` operation).
+- Manager (`mp-project-manager` → `isWorkFlowManager()`) → may promote pre-state to `RETIRE_ROOT`, run reference retargeting, set `deprecated`.
+
+The existing `AccessControlFilter` change→operation mapping (`AddAxiom`→`ADD_AXIOM`, plus custom `RETIRE` / `UNRETIRE` / `UNMERGE`) is reused largely as-is.
+
+## Decision 3: Entity-scoped optimistic concurrency (replaces global revision head)
+
+The revision-number scheme is effectively a single global lock. Replace it with **per-concept optimistic versioning**: each concept subgraph carries a version/ETag (hash of its defining triples, or a monotonic per-concept counter maintained by the service). A transaction declares the concepts it read/wrote and their observed versions; the service accepts only if none moved. Two modelers on unrelated concepts never conflict — the common case.
+
+Refresh-without-chattiness uses the same version: instead of polling a global revision (`EnableAutoUpdateAction`), the editor subscribes to / long-polls a **change feed of `(conceptCode, newVersion)`** and refreshes only the concepts currently open or visible.
+
+### Blast radius is wider than first characterized — merges AND retirements
+
+Correction to the initial analysis (which treated RETIRE as touching only the retired class): **both merge and retirement have a two-directional blast radius.** They modify:
+
+- **Outbound**: the classes the retiring/merging class points to **through object properties (roles)** — role fillers are **retargeted** where possible, and annotations such as `OLD_SOURCE_ROLE` (and the analogous deprecation markers) are added to preserve the prior role assertions.
+- **Inbound**: the classes that **point to** the retiring/merging class — references are retargeted (merge) or deprecated/annotated (retire) via `ReferenceReplace.retargetRefs(...)` scanning `getReferencingAxioms(...)`.
+
+So the true write-set of a merge or retire is:
+
+```
+{ subject } ∪ referencingClasses(subject) ∪ roleFillerClasses(subject)
+```
+
+Implications for the concurrency model:
+
+- The declared write-set for merge/retire must be **expanded to this inbound+outbound closure**, and the service takes a short **wide lock / multi-concept version check** over the whole closure — not just the retired concept.
+- This is acceptable because merges and finalized retirements are **manager-gated and infrequent**; everyday modeler edits (MODIFY, CREATE, SPLIT) stay narrow.
+- The change feed must emit version bumps for **every concept in the closure**, so open editors on an inbound/outbound neighbor refresh correctly (e.g. a class whose role filler was just retargeted, or that received an `OLD_SOURCE_ROLE` annotation).
+
+Decision to pin down: the **unit of versioning** (concept subgraph — recommended, matches edit granularity — vs. named-graph-per-concept vs. global) drives both the conflict check and the refresh feed.
+
+## Decision 4: `nci-curator` consumes a materialized logical projection
+
+The curator only needs the **logical axioms** — named classes, `SubClassOf` (named superclass or single `ObjectSomeValuesFrom(role, filler)`), equivalences, and the role hierarchy — never annotations. `KnowledgeBase` walks an object graph; it does not need OWL API richness.
+
+- Define the projection precisely and materialize it with a **bounded SPARQL query** against Virtuoso (no full-ontology scan).
+- **Build it server-side, next to the triple store** (not per-client), maintained incrementally from the same accepted-commit stream the coordination service already processes — logical-axiom changes patch the graph; annotation-only edits are ignored. Note: role-filler retargeting from a merge/retire (Decision 3) **is** a logical-axiom change and must patch the projection.
+- Serialize as a compact binary snapshot (reuse `binaryowl`) and serve on demand, stamped with per-concept versions.
+- Keep the projection **derived and disposable** (a cache keyed by concept version), never authoritative — otherwise there are two sources of truth.
+
+This isolates the one remaining legitimate OWL-API consumer behind a narrow "logical model" service so the rest of the migration need not keep the curator's needs in scope.
+
+## EVS history survives the migration nearly unchanged
+
+EVS history is already **decoupled from axioms** — records are keyed on `code / name / operation / reference` derived from UI intent, not from `OWLOntologyChange` inspection (`CodeGenHandler.recordEvsHistory`, appended as tab-delimited text). The only change is that its trigger moves from the **client post-commit** to the **service's accept-commit callback**.
+
+## Open decisions carried forward
+
+1. **Transaction ↔ RDF atomicity** (highest risk): how the service makes a multi-axiom OWL transaction atomic against Virtuoso — staging graph + swap, or a single SPARQL Update request with rollback discipline.
+2. **Versioning unit**: concept subgraph vs. named-graph-per-concept vs. global (drives conflict check + refresh feed).
+3. **Provenance model** replacing `ChangeHistory`: RDF-star, a reified change graph, or a side ledger in the service.
+4. **EVS history trigger point**: confirm moving the hook to the service accept-commit callback is acceptable.
+
+## Decisions key files
+
+| Concern | File |
+|---|---|
+| Complex ops (split/merge/retire) + batch/commit | `nci-edit-tab/src/main/java/gov/nih/nci/ui/NCIEditTab.java` |
+| Inbound/outbound reference + role-filler retargeting | `nci-edit-tab/src/main/java/gov/nih/nci/utils/ReferenceReplace.java` |
+| Pre-state roots, permission ids, `OLD_SOURCE_ROLE`/dep annotations | `nci-edit-tab/src/main/java/gov/nih/nci/ui/NCIEditTabConstants.java` |
+| Server-side permission enforcement at commit | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/policy/AccessControlFilter.java` |
+| Authorization check | `metaproject/src/main/java/edu/stanford/protege/metaproject/impl/ServerConfigurationImpl.java` (`isOperationAllowed`) |
+| Predefined + custom operations | `metaproject/src/main/java/edu/stanford/protege/metaproject/impl/Operations.java` |
+| EVS history record + persistence | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/http/handlers/CodeGenHandler.java`, `.../server/http/messages/History.java` |
