@@ -15,7 +15,7 @@ hs_err_pid*
 nci-protege5
 *~
 
-*.owl
+#*.owl
 scripts/nci-protege5
 scripts/nci-protege5-pellet
 scripts/metaproject-admin/meta-admin-app
