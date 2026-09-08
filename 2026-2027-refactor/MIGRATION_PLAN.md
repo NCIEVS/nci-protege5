@@ -21,22 +21,29 @@ The redundant-dependency work scoped earlier **mostly evaporates at step 5** bel
 
 Sequence the work by *what survives*, not by *what is messy*. Wrap the doomed OWL-API layer, stand up its replacement behind a stable seam, then delete.
 
-### Step 0 — Fix branch footguns and freeze a baseline
+### Step 0 — Establish the refactor branch from the stable base
 
-The whole build is tag-driven (`scripts/build.sh` checks out `$TAG` for each repo; `scripts/tagger.sh` tags them together), so reproducibility depends on clean branch state.
+The whole build is tag-driven: `scripts/build.sh $TAG $TARGET` clones each core repo from `github.com/$TARGET/…` and runs `git checkout $TAG`. A branch name is a valid ref for `git checkout` (identical to a tag for build purposes — it just materializes that commit's tree), so the build can run off a **branch** exactly as it runs off a tag.
 
-Current branch state (observed 2026-09-04):
+Baseline: the latest tag **`4.4.1-dev3`** is stable and present in all five core repos — this is the rollback point (no re-tagging needed). Branch state of the *local working copies* (owlapi on `5.1.6`, binaryowl detached, others `master`) is irrelevant: the build uses the tag/branch ref, not the working-copy branch.
 
-| Repo | Branch | Note |
+Strategy: one branch name, **`2026-2027-refactor`**, in every core repo, cut from `4.4.1-dev3`. Because `build.sh` applies a single ref to *all* core repos and is `#!/bin/sh -e` (aborts on first failed checkout), the branch must exist in **all five** — even the ones not yet changed. Empty branches that point at the tag commit cost nothing, and `build.sh 2026-2027-refactor NCIEVS` then resolves uniformly. Commits land only where the refactor actually touches code.
+
+Plugins stay independent: `plugins-build.sh` has the same one-ref-for-all loop, so it keeps using the plugins' latest tags. Branch a plugin as `2026-2027-refactor` only when the refactor reaches it (`nci-edit-tab`, `lucene-search-tab` in step 3), and build/drop that one jar individually.
+
+Done (2026-09-09): created `2026-2027-refactor` from `4.4.1-dev3` in all five core repos, each pointing at the exact tag commit:
+
+| Repo | `2026-2027-refactor` → | tag commit |
 |---|---|---|
-| `owlapi` | `5.1.6` | non-`master` release branch |
-| `binaryowl` | **detached HEAD** | fix before tagging — reproducibility footgun |
-| `sparql-query-plugin` | `virtuoso` | migration beachhead already exists |
-| `xmlcatalog`, `metaproject`, `protege`, `nci-edit-tab`, `lucene-search-tab`, `evs-history`, `revision-history` | `master` | — |
+| `owlapi` | `bfe7f2bd61` | = `4.4.1-dev3` |
+| `binaryowl` | `b4ec67af46` | = `4.4.1-dev3` |
+| `xmlcatalog` | `d579f2be90` | = `4.4.1-dev3` |
+| `metaproject` | `92d4e0b991` | = `4.4.1-dev3` |
+| `protege` | `a110f8df4f` | = `4.4.1-dev3` |
 
-Actions:
-- Get `binaryowl` (and `owlapi` if desired) onto clean named branches.
-- Tag the current working state with `tagger.sh` and confirm `build.sh` reproduces it. This is the rollback point for the entire migration.
+Pending: branches are **local only** — push each to `origin` (NCIEVS) before `build.sh 2026-2027-refactor NCIEVS` can consume them (`git push origin 2026-2027-refactor` per repo; load the SSH key via `ssh-add` first to avoid a per-repo passphrase prompt).
+
+Pushed (2026-09-09): all five `2026-2027-refactor` branches pushed to `origin` (NCIEVS). `build.sh 2026-2027-refactor NCIEVS` now resolves uniformly and builds the `4.4.1-dev3` tree until commits land on the branches.
 
 ### Step 1 — Carve out the OWL-RDF I/O layer as a new standalone project
 
