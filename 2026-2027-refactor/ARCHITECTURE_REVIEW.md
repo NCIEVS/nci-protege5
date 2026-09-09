@@ -254,6 +254,13 @@ Resolves open decision #1. The commit path already serializes writes, so the tra
 - **Preconditions:** the server must be the **sole writer** to Virtuoso (clients read-only via SPARQL), and the lock must be a genuine single serialization point. Note the standing `// TODO: head revision is checked here, but another thread may already be proceeding to do a commit` above the check — `synchronized` only serializes with **one** `ConflictDetectionFilter` instance per project; harden to a single instance / shared per-project commit lock before relying on it for Virtuoso writes.
 - **Granularity:** commits are serialized one at a time per project. The accept/reject predicate is **per-class** (Decision #2 below); a rejected commit still never interleaves, and Virtuoso applies stay in serialized revision order, so the boundary argument holds regardless of the gate's granularity.
 
+## Write-path security — clients read-only, server the only writer
+
+Confirmed against the dev Virtuoso (2026-09-10): the anonymous `/sparql` endpoint **accepts SPARQL Update** (an anonymous `INSERT DATA` returned 200). Combined with clients being able to change the endpoint URL (`SPARQLPreferences`, client-side), a client could write directly to the store — violating the “server is the sole writer” precondition of Decision #1. Enforce before go-live:
+- **Virtuoso-side endpoint separation is the real guard** (not client trust): expose a **read-only** endpoint to clients (grant only `SPARQL_SELECT` to the anonymous SPARQL role) and put updates behind an **authenticated** endpoint (`/sparql-auth`) whose credentials only the server holds.
+- The server write path (`owl-virtuoso.SparqlStore`) uses the **metaproject-sourced** endpoint (`TRIPLESTORE` config) + graph (project `namespace/name`), never client preferences — mirroring `HTTPChangeService` (endpoint at line 302, graph at line 418, gated by `UPDATE_TRIPLE_STORE`).
+- Optionally, `sparql-query-plugin` should validate its loaded query list as read-only and reject SPARQL `UPDATE` (it uses `prepareQuery` today, which is query-only).
+
 # Decision #2: per-class commit gate (2026-09-10)
 
 Chosen over the global `base == head` gate. The commit stays serialized (transaction-boundary decision above), but the **accept/reject predicate becomes per-class**, so modelers editing disjoint areas commit concurrently without a full re-sync.

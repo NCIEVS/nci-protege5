@@ -51,7 +51,7 @@ This is the single part of `owlapi` that is kept, and it already sits behind a c
 
 Research finding (2026-09-09): the entire OWL⇄RDF/XML machinery lives in **one owlapi module, `owlapi-parsers`** (`org.semanticweb.owlapi.rdf.rdfxml.parser` / `.renderer`), on top of `owlapi-api` (model) and `owlapi-impl` (in-memory `OWLOntologyImpl`/`OWLDataFactoryImpl`). There are **no NCI/EVS fork customizations** in that code — it is clean upstream. `rio` (15 rdf4j artifacts), `oboformat`, `tools`, `compatibility`, `distribution` are **not needed** for RDF/XML load+save. protégé's `OntologyLoader` uses `OWLManager.createOWLOntologyManager()` + `loadOntologyFromOntologyDocument(...)`; `OntologySaver` uses `ontology.saveOntology(OWLDocumentFormat, ...)` — that is the boundary the new project satisfies.
 
-Done (2026-09-09) — v1 scaffolded at `projs/owl-rdf-io` (`gov.nih.nci.evs:owl-rdf-io:0.1.0-SNAPSHOT`, Java 8):
+Done (2026-09-09) — v1 scaffolded at `projs/owl-rdf-io` (`gov.nih.nci:owl-rdf-io:0.1.0-SNAPSHOT`, Java 8):
 - `OwlRdfIO` facade — the whole public surface: `load(InputStream)→OWLOntology`, `save(OWLOntology, OutputStream)` / `saveToBytes(...)` in RDF/XML.
 - Depends on `owlapi-apibinding:5.1.6-SNAPSHOT` (v1 choice: `OWLManager` wires parsers/storers reliably, exactly like `OntologyLoader`). To be trimmed in v1b.
 - `RoundTripTest` (milestone-1 acceptance): parse fixture → render RDF/XML → reparse → assert axiom set preserved. **Passing** — axioms preserved exactly on `Thesaurus-test-small.owl` (2.9 MB, 754 classes + 263 properties + 24 datatype enums). First concrete proof the OWL 2 ⇄ RDF mapping is non-lossy on real NCIt content.
@@ -80,13 +80,15 @@ Against the seam from step 1, following the decisions in `ARCHITECTURE_REVIEW.md
 
 Revisit finer-grained concurrency (per-concept refresh feed, non-pausing squash) only after the coarse path is proven end-to-end.
 
-Started (2026-09-10) — the OWL↔RDF changeset transform (the one net-new v1 component). New module `projs/owl-virtuoso` (`gov.nih.nci.evs:owl-virtuoso:0.1.0-SNAPSHOT`, depends on `owl-rdf-io` so that module stays pure; rdf4j/Virtuoso wiring added here later):
+Started (2026-09-10) — the OWL↔RDF changeset transform (the one net-new v1 component). New module `projs/owl-virtuoso` (`gov.nih.nci:owl-virtuoso:0.1.0-SNAPSHOT`, depends on `owl-rdf-io` so that module stays pure; rdf4j/Virtuoso wiring added here later):
 - `ChangesetRdf.axiomToTriples` / `transform` renders OWL axioms to RDF triples via owlapi's `RDFTranslator`, producing `INSERT`/`DELETE` triple sets for a changeset.
 - **Blank-node problem solved with per-axiom skolemization.** owlapi assigns blank-node ids from a counter, so the same anonymous structure (restriction, `owl:Axiom` reification, `intersectionOf` list) renders to a different `_:` id each pass — a `DELETE` would never match a prior `INSERT`. Fix: render each axiom in isolation with a fresh counter and rewrite each blank node to `urn:skolem:{sha256(axiom)}:{localId}`. The axiom hash scopes the skolem, so identical structures on different axioms don't collide and the same axiom's add/remove render identically.
 - Tests (5, green) prove the invariant on the real bnode cases: a `someValuesFrom` restriction and a reified `owl:Axiom` synonym qualifier render deterministically; add-then-remove cancels; distinct subjects get distinct skolems; named `subClassOf` stays a single bnode-free triple.
 - Repo `git init`ed, branch `2026-2027-refactor` (`f0d1015`). Not yet in `build.sh` (WIP, not yet consumed).
 
-Next: wire the RDF4J `SPARQLRepository` SPARQL-Update write path to Virtuoso (reusing `sparql-query-plugin`'s connection), issue the transform's insert/delete sets as one `DELETE DATA … ; INSERT DATA …` per accepted changeset (Decision #1), and add the last-applied-revision marker + replay.
+Done (2026-09-10) — the RDF4J SPARQL-Update write path (`owl-virtuoso.SparqlStore`). Applies an `RdfChangeSet` as one SPARQL Update (`DELETE DATA` then `INSERT DATA`) into the project named graph via RDF4J `SPARQLRepository` (the same client the server's `RemoteSparqlReasoner` uses). Endpoint + graph are server-sourced (`TRIPLESTORE` config + project `namespace/name`), never client preferences. Verified end-to-end: an in-memory RDF4J round-trip (CI-safe) and a gated `-Dvirtuoso.endpoint` integration test **green against the real localhost Virtuoso (11.4M triples)** — the skolemized `DELETE` matches the earlier `INSERT` and the graph empties. Security: the dev Virtuoso allows anonymous updates, so before go-live the client-facing endpoint must be read-only with updates behind an authenticated server-only endpoint (see `ARCHITECTURE_REVIEW.md` “Write-path security”).
+
+Still to do for the v1 write path: hook `SparqlStore.apply` into the server's `synchronized` commit section (right after the changeset is appended to the log), add the last-applied-revision marker + replay-on-restart recovery (Decision #1), and fold in the EVS descriptor (Decision #4).
 
 ### Step 3 — Migrate the hard consumers
 
