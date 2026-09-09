@@ -180,12 +180,55 @@ This isolates the one remaining legitimate OWL-API consumer behind a narrow "log
 
 EVS history is already **decoupled from axioms** — records are keyed on `code / name / operation / reference` derived from UI intent, not from `OWLOntologyChange` inspection (`CodeGenHandler.recordEvsHistory`, appended as tab-delimited text). The only change is that its trigger moves from the **client post-commit** to the **service's accept-commit callback**.
 
+# The changeset log is the spine (2026-09-09 clarification)
+
+Correcting the earlier framing that treated the change-history mainly as an audit trail: the **append-only changeset log is the central data structure of the collaborative system** and must be kept. It is a per-revision, append-only list of `OWLOntologyChange` (Add/RemoveAxiom, plus import / annotation / ontology-id changes) grouped into commits, each with a `RevisionMetadata` (author, timestamp, comment), serialized with `BinaryOWLOntologyChangeLog` (`ChangeHistoryImpl`, `ChangeHistoryUtils`, `Commit`; appended server-side by `ChangeManagementFilter` → `changePool.appendChanges`).
+
+## Decision (provenance — was open #3): keep the changeset log, add an OWL↔RDF transform
+
+The provenance model is **decided**: keep the append-only OWL-axiom changeset log rather than replacing it with RDF-star or a reified change graph. It is not merely audit — it is load-bearing for:
+- **Manager review** — the `revision-history` plugin browses changesets per author / date / subject (`LogDiff`, `LogDiffManager`, `ChangeHistoryPanel`, `AuthorPanel`, `CommitPanel`).
+- **Conflict detection** — server-side `ConflictDetectionFilter` (base-revision vs head → `OutOfSyncException`) and client-side `SimpleConflictDetector` (same-type-and-annotation-property strategy) via `LogDiff.findConflits`.
+- **Abort / reject and undo** — `ReviewManagerImpl.getReviewOntologyChanges` / `getReverseChange` reverse rejected changes (Add↔Remove) and commit them as a `[Review]` changeset; this is also how `unretire`/`unmerge` reconstruct their undo (reverse the original commit's changes).
+
+The one addition the migration requires: changesets must be **transformable into and out of RDF**, so the same append-only OWL add/remove log can (a) stay the authoritative provenance ledger + undo substrate, and (b) drive incremental updates into Virtuoso.
+
+## New commit flow
+
+1. Client commits a changeset (bundle of OWL add/remove axioms) → coordination service.
+2. Service enforces policy + conflict check, then **appends the changeset to the log** (unchanged).
+3. Service **transforms the changeset's OWL changes → RDF triple add/removes and applies them to Virtuoso** (the new step; Virtuoso becomes current-state truth).
+4. Other modelers see the change through Virtuoso (lazy queries) and by **consuming the changeset stream** for local refresh + Lucene indexing (below).
+
+## Squash (periodic compaction) is kept
+
+Roughly weekly a manager compacts the log (`revision-history` → `ReviewButtonsPanel.squashHistoryBtnListener` → `LocalHttpClient.squashHistory` → `HTTPChangeService.squashHistory`):
+- **Pause the server** (`HTTPServer.isPaused`; during squash only commit / squash / latest-changes are allowed) so no one edits.
+- Archive the old `history` (changeset log), `history-snapshot`, and checksum under `squash-{timestamp}/`; create a **fresh empty changeset file**; write a **new snapshot baseline** (`serverLayer.saveProjectSnapshot`, binaryowl) + checksum; clear the history cache.
+- Back up `evs_history` and `concept_history` at the same checkpoint.
+
+Implication for the snapshot: the binaryowl **snapshot survives here** — as the server-side squash *baseline/backup* and the seed for (re)loading Virtuoso and building the curator projection — **not** as the per-client full-ontology RAM load, which the Virtuoso lazy model retires. So binaryowl is kept for two things: the **changeset log** (`BinaryOWLOntologyChangeLog`) and the **squash snapshot baseline** (plus the curator's logical-projection blob, Decision 4).
+
+## Clients still consume the changeset stream — for Lucene and refresh
+
+`lucene-search-tab` builds its client-side index (`~/.protege/lucene-search-tab/indexes/<id>/`) and keeps it current by listening to `OWLOntologyChange` events: `LuceneSearchManager` registers an `OWLOntologyChangeListener`; `updateIndex` routes each change through `AddChangeSetHandler` / `RemoveChangeSetHandler` (indexing `ENTITY_IRI`, `DISPLAY_NAME`, `ENTITY_TYPE`, and annotation `ENTITY_IRI` / `ANNOTATION_IRI` / `ANNOTATION_TEXT`; SearchTab variants add logical-axiom fields). Today those events come from applying server-synced changesets to the in-memory ontology.
+
+In the Virtuoso model the full ontology is no longer in RAM, so **the changeset stream itself must feed the indexer** — the add/remove axioms carry exactly the entity IRIs + annotation text the index needs. This makes the changeset feed a first-class client input (driving both Lucene maintenance and open-editor refresh), replacing the "apply changes to the whole in-RAM ontology" trigger.
+
+## Retirement/merge blast radius (reinforcing the concurrency discussion)
+
+Reconfirmed in `NCIEditTab` retirement logic: retiring a class rewrites **both directions** —
+- **outbound**: classes it points to via object-property roles/associations — role fillers are retargeted where possible and `OLD_SOURCE_ROLE` / `DEP_ROLE` / `DEP_ASSOC` annotations added;
+- **inbound**: classes that point to it — references retargeted/deprecated via `ReferenceReplace.retargetRefs` over `getReferencingAxioms`.
+
+A single retire/merge commit therefore legitimately mutates many classes. The changeset already **bundles all of those add/removes into one commit**, and conflict detection operates over the whole bundle — which is why the **changeset-based conflict model is the natural fit** (not a separate per-concept lock). Entity-scoped versioning (open decision #2) is at most an optional optimization for the *refresh feed*, not a replacement for changeset-level conflict detection.
+
 ## Open decisions carried forward
 
-1. **Transaction ↔ RDF atomicity** (highest risk): how the service makes a multi-axiom OWL transaction atomic against Virtuoso — staging graph + swap, or a single SPARQL Update request with rollback discipline.
-2. **Versioning unit**: concept subgraph vs. named-graph-per-concept vs. global (drives conflict check + refresh feed).
-3. **Provenance model** replacing `ChangeHistory`: RDF-star, a reified change graph, or a side ledger in the service.
-4. **EVS history trigger point**: confirm moving the hook to the service accept-commit callback is acceptable.
+1. **Transaction ↔ RDF atomicity** (highest risk): how the service makes a multi-axiom OWL transaction atomic against Virtuoso when it applies an accepted changeset — staging graph + swap, or a single SPARQL Update request with rollback discipline.
+2. **Versioning unit** (optional optimization): concept subgraph vs. named-graph-per-concept vs. global, for the *refresh feed* only. Changeset-level conflict detection (base-revision vs head + `SimpleConflictDetector`) is the baseline and already covers the multi-class blast radius; per-concept versioning would only refine refresh granularity.
+3. **Provenance model** — **DECIDED**: keep the append-only OWL-axiom changeset log (`BinaryOWLOntologyChangeLog`) as the authoritative ledger + undo substrate, and add an OWL↔RDF transform so the same changesets drive Virtuoso. Not RDF-star. (See “The changeset log is the spine” above.)
+4. **EVS history trigger point**: confirm moving the hook to the service accept-commit callback is acceptable. Note `evs_history` and `concept_history` are backed up at squash time, so the squash checkpoint is the natural place to also snapshot them.
 
 ## Decisions key files
 
@@ -198,3 +241,10 @@ EVS history is already **decoupled from axioms** — records are keyed on `code 
 | Authorization check | `metaproject/src/main/java/edu/stanford/protege/metaproject/impl/ServerConfigurationImpl.java` (`isOperationAllowed`) |
 | Predefined + custom operations | `metaproject/src/main/java/edu/stanford/protege/metaproject/impl/Operations.java` |
 | EVS history record + persistence | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/http/handlers/CodeGenHandler.java`, `.../server/http/messages/History.java` |
+| Changeset log (append-only OWL changes) | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/versioning/ChangeHistoryImpl.java`, `ChangeHistoryUtils.java`, `Commit.java`; `binaryowl` `BinaryOWLOntologyChangeLog` |
+| Server-side commit append | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/change/ChangeManagementFilter.java` |
+| Conflict detection (server / client) | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/conflict/ConflictDetectionFilter.java`; `revision-history/src/main/java/org/protege/editor/owl/client/diff/model/SimpleConflictDetector.java`, `LogDiff.java` |
+| Manager review + reject/undo | `revision-history/src/main/java/org/protege/editor/owl/client/diff/model/ReviewManagerImpl.java`, `.../diff/ui/ReviewButtonsPanel.java` |
+| Squash (pause + compact + new baseline) | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/http/handlers/HTTPChangeService.java` (`squashHistory`), `.../server/http/HTTPServer.java` (`isPaused`) |
+| Snapshot serialize/load (baseline + curator) | `protege/protege-editor-owl/src/main/java/org/protege/editor/owl/server/api/ServerLayer.java` (`saveProjectSnapshot`), `.../client/LocalHttpClient.java` (`loadSnapShot`) |
+| Client Lucene index driven by changes | `lucene-search-tab/src/main/java/org/protege/editor/search/lucene/LuceneSearchManager.java`, `AddChangeSetHandler.java`, `RemoveChangeSetHandler.java` |
