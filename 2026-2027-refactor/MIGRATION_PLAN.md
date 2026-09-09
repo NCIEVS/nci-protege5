@@ -80,6 +80,14 @@ Against the seam from step 1, following the decisions in `ARCHITECTURE_REVIEW.md
 
 Revisit finer-grained concurrency (per-concept refresh feed, non-pausing squash) only after the coarse path is proven end-to-end.
 
+Started (2026-09-10) — the OWL↔RDF changeset transform (the one net-new v1 component). New module `projs/owl-virtuoso` (`gov.nih.nci.evs:owl-virtuoso:0.1.0-SNAPSHOT`, depends on `owl-rdf-io` so that module stays pure; rdf4j/Virtuoso wiring added here later):
+- `ChangesetRdf.axiomToTriples` / `transform` renders OWL axioms to RDF triples via owlapi's `RDFTranslator`, producing `INSERT`/`DELETE` triple sets for a changeset.
+- **Blank-node problem solved with per-axiom skolemization.** owlapi assigns blank-node ids from a counter, so the same anonymous structure (restriction, `owl:Axiom` reification, `intersectionOf` list) renders to a different `_:` id each pass — a `DELETE` would never match a prior `INSERT`. Fix: render each axiom in isolation with a fresh counter and rewrite each blank node to `urn:skolem:{sha256(axiom)}:{localId}`. The axiom hash scopes the skolem, so identical structures on different axioms don't collide and the same axiom's add/remove render identically.
+- Tests (5, green) prove the invariant on the real bnode cases: a `someValuesFrom` restriction and a reified `owl:Axiom` synonym qualifier render deterministically; add-then-remove cancels; distinct subjects get distinct skolems; named `subClassOf` stays a single bnode-free triple.
+- Repo `git init`ed, branch `2026-2027-refactor` (`f0d1015`). Not yet in `build.sh` (WIP, not yet consumed).
+
+Next: wire the RDF4J `SPARQLRepository` SPARQL-Update write path to Virtuoso (reusing `sparql-query-plugin`'s connection), issue the transform's insert/delete sets as one `DELETE DATA … ; INSERT DATA …` per accepted changeset (Decision #1), and add the last-applied-revision marker + replay.
+
 ### Step 3 — Migrate the hard consumers
 
 Port hierarchy providers and `lucene-search-tab` onto the new model. These encode the "whole ontology in RAM" assumption most deeply and will fight a lazy model hardest, so they gate the schedule.
