@@ -169,12 +169,24 @@ Decision to pin down: the **unit of versioning** (concept subgraph — recommend
 
 The curator only needs the **logical axioms** — named classes, `SubClassOf` (named superclass or single `ObjectSomeValuesFrom(role, filler)`), equivalences, and the role hierarchy — never annotations. `KnowledgeBase` walks an object graph; it does not need OWL API richness.
 
-- Define the projection precisely and materialize it with a **bounded SPARQL query** against Virtuoso (no full-ontology scan).
-- **Build it server-side, next to the triple store** (not per-client), maintained incrementally from the same accepted-commit stream the coordination service already processes — logical-axiom changes patch the graph; annotation-only edits are ignored. Note: role-filler retargeting from a merge/retire (Decision 3) **is** a logical-axiom change and must patch the projection.
-- Serialize as a compact binary snapshot (reuse `binaryowl`) and serve on demand, stamped with per-concept versions.
-- Keep the projection **derived and disposable** (a cache keyed by concept version), never authoritative — otherwise there are two sources of truth.
+- Define the projection precisely and build it **server-side, next to the triple store** (not per-client) from the compacted state at squash time. It is logical-only; annotation-only edits are irrelevant to it. Note: role-filler retargeting from a merge/retire (Decision 3) **is** a logical-axiom change and so does affect the projection (it is picked up on replay). First-pass production/consumption mechanics are in the refinement below.
+- Serialize as a compact binary snapshot (reuse `binaryowl`) and serve on demand, stamped with the head revision it reflects.
+- Keep the projection **derived and disposable** (a checkpoint rebuilt at squash, plus replayed delta), never authoritative — otherwise there are two sources of truth.
 
 This isolates the one remaining legitimate OWL-API consumer behind a narrow "logical model" service so the rest of the migration need not keep the curator's needs in scope.
+
+### Refinement (2026-09-09): base graph + changeset replay, keyed by revision
+
+First-pass mechanics for how the projection is produced and consumed, replacing "continuously materialize via SPARQL" with a checkpoint + replay model that reuses the changeset spine:
+
+- **Squash writes the logical base graph.** The logical object graph is a checkpoint artifact emitted at squash time (alongside the new empty changeset and the evs/concept-history backups). Between squashes the base-graph file is immutable.
+- **Classify = base graph + replayed committed delta.** On a classification request the server curator loads the base graph, then replays the changesets accumulated since the last squash, then runs `KnowledgeBase`. No full ontology is ever in RAM (except the logical-only graph, server-side).
+- **Replay is logical-axiom-only.** Changesets carry everything (annotations, synonyms, EVS qualifiers); the curator applies only the logical subset (declarations, `SubClassOf`, `EquivalentClasses`, object-property/role axioms) and ignores annotation-only changes. Since the overwhelming majority of edits are annotation changes, the *logical* delta between squashes is small — which is why replay-on-demand is cheap and the on-disk graph does **not** need per-commit maintenance on the first pass.
+- **Keyed by revision.** The curator replays changesets **up to the current head revision** — the same boundary Virtuoso has applied — so curator results and Virtuoso queries stay consistent and results are reproducible/cacheable by revision.
+- **Pre-commit classification is the one open question.** Today the curator runs client-side and therefore classifies the modeler's *uncommitted* work. Server-side "base + committed delta" only sees committed state, so to classify work-in-progress the request must carry the client's **pending changeset** as an extra delta: `classify(base graph + committed delta up to head + client pending logical delta)`. This makes the classification endpoint take an optional pending-changes payload rather than being purely stateless-by-revision — a decision to pin down.
+- **Deferred:** rewriting the on-disk graph after a classification (memoization). First pass stays stateless — base + replay every time — until the next squash rewrites the base. Revisit only if the logical delta ever grows enough to matter.
+
+Net: **squash writes the logical base graph; classify = base graph + committed delta (+ optional client pending delta), logical axioms only, replayed server-side, keyed by revision.** The curator remains the single component allowed to hold a full (logical-only) graph in memory, server-side, without dragging the rest of the system back to whole-ontology-in-RAM.
 
 ## EVS history survives the migration nearly unchanged
 
