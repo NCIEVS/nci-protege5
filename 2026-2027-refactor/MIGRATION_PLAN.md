@@ -49,6 +49,19 @@ Pushed (2026-09-09): all five `2026-2027-refactor` branches pushed to `origin` (
 
 This is the single part of `owlapi` that is kept, and it already sits behind a clean I/O boundary. Making it standalone is the **seam** the rest of the strangler hangs on. See the dedicated section below.
 
+Research finding (2026-09-09): the entire OWL⇄RDF/XML machinery lives in **one owlapi module, `owlapi-parsers`** (`org.semanticweb.owlapi.rdf.rdfxml.parser` / `.renderer`), on top of `owlapi-api` (model) and `owlapi-impl` (in-memory `OWLOntologyImpl`/`OWLDataFactoryImpl`). There are **no NCI/EVS fork customizations** in that code — it is clean upstream. `rio` (15 rdf4j artifacts), `oboformat`, `tools`, `compatibility`, `distribution` are **not needed** for RDF/XML load+save. protégé's `OntologyLoader` uses `OWLManager.createOWLOntologyManager()` + `loadOntologyFromOntologyDocument(...)`; `OntologySaver` uses `ontology.saveOntology(OWLDocumentFormat, ...)` — that is the boundary the new project satisfies.
+
+Done (2026-09-09) — v1 scaffolded at `projs/owl-rdf-io` (`gov.nih.nci.evs:owl-rdf-io:0.1.0-SNAPSHOT`, Java 8):
+- `OwlRdfIO` facade — the whole public surface: `load(InputStream)→OWLOntology`, `save(OWLOntology, OutputStream)` / `saveToBytes(...)` in RDF/XML.
+- Depends on `owlapi-apibinding:5.1.6-SNAPSHOT` (v1 choice: `OWLManager` wires parsers/storers reliably, exactly like `OntologyLoader`). To be trimmed in v1b.
+- `RoundTripTest` (milestone-1 acceptance): parse fixture → render RDF/XML → reparse → assert axiom set preserved. **Passing** — axioms preserved exactly on `Thesaurus-test-small.owl` (2.9 MB, 754 classes + 263 properties + 24 datatype enums). First concrete proof the OWL 2 ⇄ RDF mapping is non-lossy on real NCIt content.
+- Build: `JAVA_HOME=…/zulu-8.jdk … mvn -f projs/owl-rdf-io/pom.xml clean test` → BUILD SUCCESS.
+
+Next in this step:
+- **v1b:** replace the `apibinding` dependency with direct `owlapi-api` + `owlapi-impl` + `owlapi-parsers` (drop the rio/rdf4j, oboformat, tools footprint); then physically absorb those three module directories into this repo and repoint `binaryowl` here instead of `owlapi-distribution`.
+- Give `owl-rdf-io` its own repo + `2026-2027-refactor` branch and wire it into `build.sh` ahead of the consumers.
+- Expand round-trip coverage to the full `Thesaurus` (not just the small fixture) and to a binaryowl round-trip.
+
 ### Step 2 — Build the Virtuoso-backed model + commit-coordination service
 
 Against the seam from step 1, following the decisions in `ARCHITECTURE_REVIEW.md` (slim commit-coordination service, workflow state as graph data, entity-scoped optimistic concurrency, materialized logical projection for `nci-curator`). Can proceed in parallel with the `sparql-query-plugin/virtuoso` work.
