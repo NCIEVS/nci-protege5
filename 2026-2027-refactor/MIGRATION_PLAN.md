@@ -71,7 +71,14 @@ v1b tail (2026-09-09):
 
 ### Step 2 — Build the Virtuoso-backed model + commit-coordination service
 
-Against the seam from step 1, following the decisions in `ARCHITECTURE_REVIEW.md` (slim commit-coordination service, workflow state as graph data, entity-scoped optimistic concurrency, materialized logical projection for `nci-curator`). Can proceed in parallel with the `sparql-query-plugin/virtuoso` work.
+Against the seam from step 1, following the decisions in `ARCHITECTURE_REVIEW.md` (slim commit-coordination service; workflow state as graph data; the append-only changeset log as the provenance spine with an OWL↔RDF transform driving Virtuoso; materialized logical projection for `nci-curator`). Can proceed in parallel with the `sparql-query-plugin/virtuoso` work.
+
+**Sequencing decision — keep the coarse-but-proven concurrency controls in v1, revisit granularity later.** The current model already works and is what `revision-history` is built around, so v1 keeps it intact and only adds the Virtuoso write step:
+- Keep **global base-revision-vs-head conflict gating** (`ConflictDetectionFilter` → `OutOfSyncException`) and client-side `SimpleConflictDetector` review as-is. Do **not** introduce entity-scoped/per-concept versioning in v1 — it is an optional refresh-feed optimization (open decision #2), not required for correctness, and the changeset already bundles a whole retire/merge blast radius into one commit that the global gate covers.
+- Keep **squash as a server-pause operation** (`HTTPServer.isPaused` + `HTTPChangeService.squashHistory`): pause, compact log → new snapshot baseline, fresh empty changeset, back up `evs_history`/`concept_history`. Only the "current state" source changes (Virtuoso instead of the in-RAM snapshot); the pause/compact/baseline mechanics stay.
+- The **new** work in v1 is narrow: after a changeset is accepted and appended to the log, transform its OWL add/removes to RDF and apply them to Virtuoso; and feed the same changeset stream to clients for Lucene + editor refresh (replacing the in-RAM-ontology change events).
+
+Revisit finer-grained concurrency (per-concept refresh feed, non-pausing squash) only after the coarse path is proven end-to-end.
 
 ### Step 3 — Migrate the hard consumers
 
