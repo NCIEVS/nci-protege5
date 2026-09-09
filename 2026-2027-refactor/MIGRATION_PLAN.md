@@ -65,8 +65,9 @@ Next in this step:
 Pending to make `build.sh 2026-2027-refactor NCIEVS` consume it:
 - Create the `NCIEVS/owl-rdf-io` GitHub repo and push `main` + `2026-2027-refactor` (needs a human — I don't create remote repos). Until then the new `build.sh` clone step will fail, exactly like any other core repo whose branch isn't pushed.
 
-Still remaining in step 1 (v1b tail, later):
-- Physically absorb the `owlapi` `api` + `impl` + `parsers` module directories into this repo (multi-module build) and repoint `binaryowl` at `owl-rdf-io` instead of `owlapi-distribution`, so the rest of `owlapi` can be dropped.
+v1b tail (2026-09-09):
+- **binaryowl decoupled from the owlapi uber jar (done).** On binaryowl's `2026-2027-refactor` branch (commit `956a5b1`): its pom drops `owlapi-distribution` for explicit `owlapi-api` + `owlapi-impl` + `owlapi-parsers` + `owlapi-rio`, with `apibinding` demoted to test scope. `owlapi-rio` is retained because `BinaryOWLOntologyDocumentParserFactory` imports a rio class (`BinaryRDFDocumentFormatFactory`) — the one real rio coupling; everything else binaryowl needs is in api/impl/parsers. The single `OWLManager.createOWLOntologyManager()` on binaryowl's read path was replaced with the same manual `OWLOntologyManagerImpl` bootstrap `owl-rdf-io` uses, so binaryowl's main code no longer needs `apibinding`. Verified: binaryowl compiles and installs; `owl-rdf-io`'s `BinaryOwlRoundTripTest` stays green against the decoupled jar. binaryowl's 4 long-standing test failures are **pre-existing** (identical on pristine `4.4.1-dev3` — hamcrest version clash + owlapi IRI-absolutization/lang-tag drift) and are skipped by `build.sh`, so not a regression.
+- **Physical module move DEFERRED to step 4 (was premature).** Moving `owlapi` `api`+`impl`+`parsers` into `owl-rdf-io` now is not yet worthwhile: `protege-editor-owl` still depends on `owlapi-distribution`/`apibinding`, so `owlapi` cannot be dropped until protégé migrates (steps 3–4). Doing the move now would only create a fragile `owl-rdf-io ↔ owlapi` build-order coupling for no near-term benefit. Absorb the three modules (and repoint `binaryowl` at `owl-rdf-io`) as part of the owlapi deletion in **step 4**.
 
 ### Step 2 — Build the Virtuoso-backed model + commit-coordination service
 
