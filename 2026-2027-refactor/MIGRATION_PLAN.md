@@ -58,9 +58,15 @@ Done (2026-09-09) — v1 scaffolded at `projs/owl-rdf-io` (`gov.nih.nci.evs:owl-
 - Build: `JAVA_HOME=…/zulu-8.jdk … mvn -f projs/owl-rdf-io/pom.xml clean test` → BUILD SUCCESS.
 
 Next in this step:
-- **v1b:** replace the `apibinding` dependency with direct `owlapi-api` + `owlapi-impl` + `owlapi-parsers` (drop the rio/rdf4j, oboformat, tools footprint); then physically absorb those three module directories into this repo and repoint `binaryowl` here instead of `owlapi-distribution`.
-- Give `owl-rdf-io` its own repo + `2026-2027-refactor` branch and wire it into `build.sh` ahead of the consumers.
-- Expand round-trip coverage to the full `Thesaurus` (not just the small fixture) and to a binaryowl round-trip.
+- **v1b (done, 2026-09-09):** dependency dropped from `owlapi-apibinding` to direct `owlapi-api` + `owlapi-impl` + `owlapi-parsers`; the `rio`/rdf4j, `oboformat`, `tools` footprint is gone. `OwlRdfIO` now bootstraps the `OWLOntologyManager` by hand (`OWLOntologyManagerImpl` + `OWLDataFactoryImpl` + `OWLOntologyFactoryImpl` + `RDFXMLParserFactory` + `RDFXMLStorerFactory`) — pattern taken from owlapi's own tests. Round-trip still passing.
+- **Round-trip coverage widened (done):** `BinaryOwlRoundTripTest` (RDF/XML load → binaryowl write via `OWLOntologyWrapper` → read via `BinaryOWLOntologyBuildingHandler` → axioms preserved) passes; `binaryowl:2.0.3-SNAPSHOT` is a test-only dep with its `owlapi-distribution` uber jar excluded (api/impl/parsers supply the classes). `FullThesaurusRoundTripTest` added — gated on `-DfullThesaurus=<path>`, skipped by default, heap via surefire `argLine` (`-Dowlrdf.test.argLine`). Suite: 3 tests, 1 skipped, BUILD SUCCESS.
+- **Repo + branch + build wiring (done):** `git init` at `projs/owl-rdf-io`, committed on `main`, branch `2026-2027-refactor` created (both at `9f10f9e`). `build.sh` now clones + `mvn install`s `owl-rdf-io` **after `binaryowl`** (it depends on owlapi, and test-compiles against binaryowl) and before `xmlcatalog`.
+
+Pending to make `build.sh 2026-2027-refactor NCIEVS` consume it:
+- Create the `NCIEVS/owl-rdf-io` GitHub repo and push `main` + `2026-2027-refactor` (needs a human — I don't create remote repos). Until then the new `build.sh` clone step will fail, exactly like any other core repo whose branch isn't pushed.
+
+Still remaining in step 1 (v1b tail, later):
+- Physically absorb the `owlapi` `api` + `impl` + `parsers` module directories into this repo (multi-module build) and repoint `binaryowl` at `owl-rdf-io` instead of `owlapi-distribution`, so the rest of `owlapi` can be dropped.
 
 ### Step 2 — Build the Virtuoso-backed model + commit-coordination service
 
