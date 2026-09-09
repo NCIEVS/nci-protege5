@@ -188,9 +188,17 @@ First-pass mechanics for how the projection is produced and consumed, replacing 
 
 Net: **squash writes the logical base graph; classify = base graph + committed delta (+ optional client pending delta), logical axioms only, replayed server-side, keyed by revision.** The curator remains the single component allowed to hold a full (logical-only) graph in memory, server-side, without dragging the rest of the system back to whole-ontology-in-RAM.
 
-## EVS history survives the migration nearly unchanged
+## Decision #4: EVS history folds into the commit (2026-09-10)
 
-EVS history is already **decoupled from axioms** — records are keyed on `code / name / operation / reference` derived from UI intent, not from `OWLOntologyChange` inspection (`CodeGenHandler.recordEvsHistory`, appended as tab-delimited text). The only change is that its trigger moves from the **client post-commit** to the **service's accept-commit callback**.
+EVS history is **decoupled from axioms** — records are keyed on `code / name / operation / reference` derived from UI intent, not from `OWLOntologyChange` inspection (`CodeGenHandler.recordEvsHistory`, appended as tab-delimited text). Today the client records it in a **second** call (`putEVSHistory`) after the commit and before broadcasting `CommitOperationEvent` — two separate transactions, so a failure between them leaves a committed change with no EVS record, unrecoverable because the operation type is UI intent, not inferable from the axioms.
+
+Decision: **carry the EVS operation descriptor inside the commit bundle** (in `RevisionMetadata`), so the server records EVS history **inside the same `synchronized` commit section** that appends the changeset and applies Virtuoso. One transaction, one failure domain.
+
+- The **changeset log is the single source of truth**; `evs_history` becomes a **derived, replay-recoverable projection** of the log — like Virtuoso — caught up to head via the last-applied-revision marker. `concept_history` is already derived from `evs_history` (`CodeGenHandler.generateConceptHistory`), so it follows for free. A crash cannot desync them: replay the log and every projection catches up.
+- The client still supplies the EVS intent (it already computes it in `submitHistory`); it just moves from a second call into the commit payload.
+- The client-side `CommitOperationEvent` broadcast is replaced by **lazy feed refresh**: other clients refresh from the changeset feed + Virtuoso; the committing client advances its head (its own Lucene index already reflects its edits). EVS is recorded server-side **before** the new revision is exposed in the feed, preserving today's “record before broadcast” ordering.
+- Squash still backs up `evs_history` / `concept_history` at the checkpoint (they are projections, so this is a convenience snapshot, not a separate source of truth).
+- Fallback (not chosen): keep EVS as a post-commit call and tolerate the pre-existing low-frequency inconsistency.
 
 # The changeset log is the spine (2026-09-09 clarification)
 
@@ -262,7 +270,7 @@ Chosen over the global `base == head` gate. The commit stays serialized (transac
 1. **Transaction ↔ RDF atomicity** — **DECIDED**: the protégé server's `synchronized` commit critical section is the transaction boundary. Apply each accepted changeset to Virtuoso as one SPARQL Update in revision order, with a last-applied-revision marker + replay from the authoritative log for crash recovery. Not a Virtuoso distributed transaction. (See “The server is the transaction boundary for Virtuoso” above.)
 2. **Versioning unit** — **DECIDED**: per-class commit gate. A commit carries `baseRevision` + the touched-class set; the server rejects only if a touched class changed in `(baseRevision, head]`, using a per-class last-changed-revision index over the changeset log. The same per-class staleness signal (from the changeset feed) drives open-editor refresh and lazy refetch. (See “Decision #2: per-class commit gate” above.)
 3. **Provenance model** — **DECIDED**: keep the append-only OWL-axiom changeset log (`BinaryOWLOntologyChangeLog`) as the authoritative ledger + undo substrate, and add an OWL↔RDF transform so the same changesets drive Virtuoso. Not RDF-star. (See “The changeset log is the spine” above.)
-4. **EVS history trigger point**: confirm moving the hook to the service accept-commit callback is acceptable. Note `evs_history` and `concept_history` are backed up at squash time, so the squash checkpoint is the natural place to also snapshot them.
+4. **EVS history trigger point** — **DECIDED**: the EVS descriptor rides in the commit bundle; the server records `evs_history` inside the commit section, making it (and `concept_history`) replay-recoverable projections of the log; the client-side broadcast is replaced by lazy feed refresh. (See “Decision #4: EVS history folds into the commit” above.)
 
 ## Decisions key files
 
