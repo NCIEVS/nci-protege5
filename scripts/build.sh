@@ -23,6 +23,11 @@ cd owl-rdf-io
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
+git clone https://github.com/$TARGET/owl-virtuoso.git
+cd owl-virtuoso
+git checkout $TAG
+mvn clean install -DskipTests=true
+cd ..
 git clone https://github.com/$TARGET/xmlcatalog.git
 cd xmlcatalog
 git checkout $TAG
