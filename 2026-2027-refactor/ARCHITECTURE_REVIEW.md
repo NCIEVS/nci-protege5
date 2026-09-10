@@ -261,6 +261,16 @@ Confirmed against the dev Virtuoso (2026-09-10): the anonymous `/sparql` endpoin
 - The server write path (`owl-virtuoso.SparqlStore`) uses the **metaproject-sourced** endpoint (`TRIPLESTORE` config) + graph (project `namespace/name`), never client preferences — mirroring `HTTPChangeService` (endpoint at line 302, graph at line 418, gated by `UPDATE_TRIPLE_STORE`).
 - Optionally, `sparql-query-plugin` should validate its loaded query list as read-only and reject SPARQL `UPDATE` (it uses `prepareQuery` today, which is query-only).
 
+## Transport / deployment topology — DEFERRED (2026-09-10)
+
+Remote modelers come in over VPN, and an **Apache reverse proxy acts as the firewall** in front of `protege-server`. Deferred by decision on 2026-09-10 — recording the current understanding so it isn't lost:
+
+- **Current read/write split (as believed, to confirm):** clients query **Virtuoso directly for read-only** SPARQL; **all updates go through `protege-server`**. This is the opposite of the "server-mediated reads" recommendation and interacts with the anonymous-write hole above — if clients reach Virtuoso directly, the client-facing endpoint **must** be a read-only role (`SPARQL_SELECT` only), updates behind an authenticated server-only endpoint.
+- **Local/dev:** a local Virtuoso on the loopback over plain **http is fine**; TLS/proxy hardening is a production concern, not a dev blocker.
+- **Chattiness of the lazy read model is acknowledged and deferred** — over VPN + a proxy hop, many small SPARQL calls add up; revisit whether reads stay client→Virtuoso-direct or become server-mediated/batched when we design Step 3 (hierarchy providers / lucene-search-tab on the lazy model).
+- **Open sub-questions to resolve later:** (a) does Apache terminate TLS and proxy plain http to Undertow on loopback, or pass TLS through to Undertow's https listener? — drives whether Undertow needs `X-Forwarded`/`ProxyPeerAddress` handling so commit **provenance records the modeler's IP, not the proxy's** (none exists today); (b) align Apache `ProxyTimeout`/body limits with the client's 1800s OkHttp timeouts and streamed payloads; (c) commit retries over flaky VPN must stay non-double-applying — the per-class `baseRevision` gate already guarantees this.
+- **Note:** the Java-native-serialization wire format (finding #5) is a **deserialization-RCE liability now reachable over VPN**; the commit-protocol rewrite (which also carries the EVS descriptor, Decision #4) should replace it with a versioned, proxy-friendly, safe-to-deserialize format. Tracked separately from this deferred transport-topology item.
+
 # Decision #2: per-class commit gate (2026-09-10)
 
 Chosen over the global `base == head` gate. The commit stays serialized (transaction-boundary decision above), but the **accept/reject predicate becomes per-class**, so modelers editing disjoint areas commit concurrently without a full re-sync.
@@ -278,6 +288,7 @@ Chosen over the global `base == head` gate. The commit stays serialized (transac
 2. **Versioning unit** — **DECIDED**: per-class commit gate. A commit carries `baseRevision` + the touched-class set; the server rejects only if a touched class changed in `(baseRevision, head]`, using a per-class last-changed-revision index over the changeset log. The same per-class staleness signal (from the changeset feed) drives open-editor refresh and lazy refetch. (See “Decision #2: per-class commit gate” above.)
 3. **Provenance model** — **DECIDED**: keep the append-only OWL-axiom changeset log (`BinaryOWLOntologyChangeLog`) as the authoritative ledger + undo substrate, and add an OWL↔RDF transform so the same changesets drive Virtuoso. Not RDF-star. (See “The changeset log is the spine” above.)
 4. **EVS history trigger point** — **DECIDED**: the EVS descriptor rides in the commit bundle; the server records `evs_history` inside the commit section, making it (and `concept_history`) replay-recoverable projections of the log; the client-side broadcast is replaced by lazy feed refresh. (See “Decision #4: EVS history folds into the commit” above.)
+5. **Transport / deployment topology (VPN + Apache firewall)** — **DEFERRED (2026-09-10)**: TLS-termination point, forwarded-header/provenance handling, proxy timeout/body-limit alignment, and whether reads stay client→Virtuoso-direct or become server-mediated. (See “Transport / deployment topology — DEFERRED” above.)
 
 ## Decisions key files
 

@@ -90,6 +90,13 @@ Done (2026-09-10) — the RDF4J SPARQL-Update write path (`owl-virtuoso.SparqlSt
 
 Still to do for the v1 write path: hook `SparqlStore.apply` into the server's `synchronized` commit section (right after the changeset is appended to the log), add the last-applied-revision marker + replay-on-restart recovery (Decision #1), and fold in the EVS descriptor (Decision #4).
 
+Done (2026-09-10, on the protege `2026-2027-refactor` branch):
+- **Commit hook** (`96f0a786`): `HTTPChangeService.submitCommitBundle` now calls the new write path after `serverLayer.commit` returns (log already appended), passing the committed head revision. Adds the `gov.nih.nci:owl-virtuoso` dependency; `build.sh` builds `owl-virtuoso` after `owl-rdf-io`.
+- **Last-applied-revision marker + replay** (`3c4ac961`): `SparqlStore.apply(changeset, revision)` writes a per-graph revision marker as the final op of the same SPARQL Update; `writeTripleStore` is now **self-healing** — it reads the marker and replays `marker+1..head` (via `changeService.getChanges`, exclusive of `from`) rather than only the current bundle, so a restart/outage catches up on the next commit. Triple-store failures are logged, never fail the commit (log is authoritative). Verified in `owl-virtuoso` (in-memory + real Virtuoso) and compiles in `protege-editor-owl`.
+- **Dead-code removal** (`6ba49684`): deleted the lossy, injection-prone `ConvertToRdf` / `buildCompQuery` / `buildAnonParentQuery` and their fields/imports.
+
+Remaining: **fold in the EVS descriptor (Decision #4)** — this is a cross-repo change (client `nci-edit-tab`/`LocalHttpClient` + the commit wire format + server), not a server-only edit: today the client records EVS via a separate `putEVSHistory` call after commit, so folding it into the commit requires the client to send the EVS descriptor with the bundle and the server to record it inside `submitCommitBundle`. Best done alongside the commit-transport rewrite (finding #5, dropping Java serialization).
+
 ### Step 3 — Migrate the hard consumers
 
 Port hierarchy providers and `lucene-search-tab` onto the new model. These encode the "whole ontology in RAM" assumption most deeply and will fight a lazy model hardest, so they gate the schedule.
