@@ -8,27 +8,27 @@ cd nci-protege5
 mkdir protege-server
 mkdir protege-server/target
 mkdir protege-server/target/server-distribution
-git clone https://github.com/$TARGET/owlapi.git
+git clone git@github.com:$TARGET/owlapi.git
 cd owlapi
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
-git clone https://github.com/$TARGET/binaryowl.git
+git clone git@github.com:$TARGET/binaryowl.git
 cd binaryowl
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
-git clone https://github.com/$TARGET/xmlcatalog.git
+git clone git@github.com:$TARGET/xmlcatalog.git
 cd xmlcatalog
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
-git clone https://github.com/$TARGET/metaproject.git
+git clone git@github.com:$TARGET/metaproject.git
 cd metaproject
 git checkout $TAG
 mvn clean install -DskipTests=true
 cd ..
-git clone https://github.com/$TARGET/protege.git
+git clone git@github.com:$TARGET/protege.git
 cd protege
 git checkout $TAG
 mvn clean install -DskipTests=true
