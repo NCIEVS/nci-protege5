@@ -14,6 +14,12 @@ git push $TARGET $TAG
 cd ../owlapi
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
+cd ../owl-rdf-io
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
+cd ../owl-virtuoso
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
 cd ../protege
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG

@@ -1,7 +1,6 @@
 #!/bin/sh
 NOW=`date +"%m_%d_%Y"`
 TAG=$1
-MSG=$2
 TARGET=$3
 echo $MSG
 cd ../../projs
@@ -12,6 +11,12 @@ cd ../xmlcatalog
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
 cd ../owlapi
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../owl-rdf-io
+git tag -d $TAG
+git push $TARGET :refs/tags/$TAG
+cd ../owl-virtuoso
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
 cd ../protege

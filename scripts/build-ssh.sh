@@ -42,13 +42,13 @@ git clone git@github.com:$TARGET/protege.git
 cd protege
 git checkout $TAG
 mvn clean install -DskipTests=true
-zip -q -d protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/lib/log4j-core-2.25.4.jar org/apache/logging/log4j/core/lookup/JndiLookup.class
-zip -q -d protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/lib/log4j-core-2.25.4.jar org/apache/logging/log4j/core/appender/db/jdbc/JdbcAppender.class
+zip -q -d protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/lib/log4j-core-2.26.1.jar org/apache/logging/log4j/core/lookup/JndiLookup.class
+zip -q -d protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/lib/log4j-core-2.26.1.jar org/apache/logging/log4j/core/appender/db/jdbc/JdbcAppender.class
 mkdir protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
 cp ../../run-editor.sh protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/run.sh
 cd protege-editor-owl/target/server-distribution
-zip -q -d server/lib/log4j-core-2.25.4.jar org/apache/logging/log4j/core/lookup/JndiLookup.class
-zip -q -d server/lib/log4j-core-2.25.4.jar org/apache/logging/log4j/core/appender/db/jdbc/JdbcAppender.class
+zip -q -d server/lib/log4j-core-2.26.1.jar org/apache/logging/log4j/core/lookup/JndiLookup.class
+zip -q -d server/lib/log4j-core-2.26.1.jar org/apache/logging/log4j/core/appender/db/jdbc/JdbcAppender.class
 cp -R server ../../../../protege-server/target/server-distribution
 cd ../../..
 cp ../metaproject/target/metaproject-1.0.3-SNAPSHOT.jar ../protege/protege-desktop/target/protege-5.1.2-SNAPSHOT-platform-independent/Protege-5.1.2-SNAPSHOT/plugins
