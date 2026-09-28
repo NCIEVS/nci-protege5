@@ -206,14 +206,21 @@ same `urn:skolem:<axiomHash>:` prefix (stable reverse walk).
 `retargetRefs` / `computeAnnotations` unchanged, and fix the `ReferenceReplace` visitor bugs
 (all/union/cardinality/hasValue) in the same pass.
 
-## 6. Open questions for the team
+## 6. Decisions (locked 2026-09-28)
 
-1. **Parity vs. correctness on non-retargeted references.** `getReferencingAxioms(E)` also returns
+1. **Parity on non-retargeted references — ignore them.** `getReferencingAxioms(E)` also returns
    `disjointWith` (17 for C7057), object-property `domain`/`range`, and reified `annotatedSource`
-   axioms — which the current in-RAM `retargetRefs` **ignores** (falls through). Replicate that for
-   exact parity, or fix (e.g. retarget `disjointWith` on merge)? A semantic decision, not technical.
-2. Should the wide merge/retire commit stay a single atomic bundle (large touched-set, blocks
-   concurrent edits to the closure) or be re-scoped? Current behaviour is correct-but-wide; document
-   it as intended.
-3. Undo/redo of a Virtuoso-sourced retarget: the reconstructed reverse changes must be reversible and
-   serializable through binaryowl until the `ChangeRecord` codec lands.
+   axioms, which the current in-RAM `retargetRefs` ignores (falls through). Slice 1 **replicates that
+   exactly** — the reverse-index query only needs to surface the shapes the retarget logic acts on
+   (subclass-parent, role filler, object-valued association). No behaviour change.
+2. **Keep the wide single commit.** A merge/retire stays one atomic bundle whose touched-set is the
+   full reference closure; it correctly blocks concurrent edits to any class in that closure. Intended
+   behaviour, not to be re-scoped.
+3. **Preserve undo semantics.** Modelers can undo a *pre-merge* / *pre-retire* (their step) before the
+   workflow manager finalizes it into a full merge/retire — the "never mind" for a mis-click. This is
+   why Slice 1 keeps the edit representation as `OWLOntologyChange` end-to-end: it runs the existing
+   `retargetRefs` / `completeRetire`, so the produced changes flow through `applyChanges` →
+   `SessionRecorder` and stay reversible on the existing undo/redo stack. The `ensureLoaded` priming of
+   owner classes is done with recording suppressed (as today), so materialization never pollutes the
+   undo stack. Defer the model-neutral `ChangeRecord` codec (Slice 2) until it can guarantee the same
+   reversibility + binaryowl serialization.
