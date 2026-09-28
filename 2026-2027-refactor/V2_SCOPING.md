@@ -171,11 +171,47 @@ Follow-on slices:
 
 ---
 
-## 5. Open questions for the team
+## 5. Round-trip spike — RESOLVED (2026-09-28)
 
-1. Reference retargeting needs the *reconstructed axioms* to edit, not just IRIs — confirm owl-rdf-io
-   can round-trip an arbitrary referencing molecule (role restrictions, reified associations) back to
-   the exact `OWLAxiom` the current in-RAM path manipulates.
+Original open question: *can we reconstruct an arbitrary referencing molecule back to the exact
+`OWLAxiom` the in-RAM path manipulates?* **Answered: yes, and more cheaply than feared** — we don't
+reconstruct reverse molecules from scratch. Instead:
+
+**Strategy:** a *reverse-index* query returns the set of **named classes that reference E**; each is
+then `ensureLoaded` via the already-proven `LazyClassLoader` forward path, after which the existing
+`getReferencingAxioms(E)` / `retargetRefs` / `computeAnnotations` work unchanged. The only new code is
+the reverse-index query; reconstruction reuses Step 3's proven forward path.
+
+Verified read-only against the full graph (`thes-full-2`, E = C7057 / Gene). All three reference
+shapes are cheap **when done right**:
+
+| Shape | Query | Cost |
+|---|---|---|
+| Children (E is a named parent) | `?c rdfs:subClassOf E` | ~3 ms |
+| Role filler (`R some E`) | **bounded reverse skolem BFS** from `?restr owl:someValuesFrom E`, VALUES-anchored `?s ?p ?x` steps up to the named owner | ~3–5 ms/step, ≤4 steps |
+| Object-valued association | `VALUES ?p { A1 A2 … } ?c ?p E` (predicate set **bound** from schema) | ~4.7 ms / 43 rows |
+
+The BFS correctly found **both** owner shapes: `C1000002` at depth 1 (plain `subClassOf (R some E)`)
+and `C999999` at depth 4 (defined class `≡ … and (R some E)`, walked restriction → list → list →
+intersection → named). This works because per-axiom skolemization gives every bnode of one axiom the
+same `urn:skolem:<axiomHash>:` prefix (stable reverse walk).
+
+**Pitfalls found (consistent with prior Virtuoso rules):**
+- Inverse property paths with alternation + `*` (`^rdf:first/(^rdf:rest)*/… | ^rdfs:subClassOf`) →
+  42000 cost-estimator rejection (est 38205 s). Use bounded VALUES-anchored BFS, not paths.
+- A **variable predicate** on a bound object (`?c ?p E`) → **32 s**. Bind the association-property set
+  via `VALUES` (the client already has it from the schema; `isAssociation` = range `anyURI`).
+
+**Slice 1 shape (now low-risk):** reverse-index queries → `ensureLoaded` the owners → run the existing
+`retargetRefs` / `computeAnnotations` unchanged, and fix the `ReferenceReplace` visitor bugs
+(all/union/cardinality/hasValue) in the same pass.
+
+## 6. Open questions for the team
+
+1. **Parity vs. correctness on non-retargeted references.** `getReferencingAxioms(E)` also returns
+   `disjointWith` (17 for C7057), object-property `domain`/`range`, and reified `annotatedSource`
+   axioms — which the current in-RAM `retargetRefs` **ignores** (falls through). Replicate that for
+   exact parity, or fix (e.g. retarget `disjointWith` on merge)? A semantic decision, not technical.
 2. Should the wide merge/retire commit stay a single atomic bundle (large touched-set, blocks
    concurrent edits to the closure) or be re-scoped? Current behaviour is correct-but-wide; document
    it as intended.
