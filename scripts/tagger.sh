@@ -26,6 +26,12 @@ git push $TARGET $TAG
 cd ../metaproject
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
+cd ../nci-curator
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
+cd ../lucene-search-tab
+git tag -a $TAG -m "$MSG"
+git push $TARGET $TAG
 cd ../../nci-protege5
 git tag -a $TAG -m "$MSG"
 git push $TARGET $TAG
