@@ -1,6 +1,7 @@
 #!/bin/sh
 NOW=`date +"%m_%d_%Y"`
 TAG=$1
+MSG=$2
 TARGET=$3
 echo $MSG
 cd ../../projs
