@@ -213,7 +213,11 @@ metrics from Virtuoso.
 - [x] Stock-tab policy decided: **two-mode** (§2c) — Mode 1 full stock; Mode 2 browse-only with
       generic editing disabled; Active Ontology editable with Virtuoso-backed metrics.
 - [x] Step 4 path chosen: **C+** (read-path hotspots + mode-aware stock-tab trust). B deferred.
-- [ ] Implement C hotspots: `OWLCellRenderer` per-paint check; `OWLEntityRenderingCacheImpl.rebuild`.
-- [ ] Implement C+: mode-aware generic-edit disable guard; Active-Ontology server-side COUNT metrics.
+- [x] C hotspots: **already resolved by earlier lazy work — no new code.** `OWLCellRenderer` /
+      `OWLCellRendererSimple` per-paint "has statements" check is bypassed/short-circuited under lazy
+      by the bold-font fix (18b9d0eb); `OWLEntityRenderingCacheImpl.rebuild`'s class-signature scan is
+      already commented out, with class lookup delegated to the lazy `OWLEntityFinderImpl` (047d95b1).
+- [x] C+ : mode-aware generic-edit disable guard (protege 244103aa / nci-edit-tab 78e96dc) and
+      Active-Ontology server-side COUNT metrics (protege 52401bb6) — done and committed.
 - [ ] Set B revisit trigger (after VPN stabilization / a concrete owlapi-coupling pain).
 - [ ] Separately: resolve the remote reverse-proxy gateway timeout for long POSTs (infra, not Step 4).
