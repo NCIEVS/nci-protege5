@@ -26,12 +26,6 @@ git push $TARGET :refs/tags/$TAG
 cd ../metaproject
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
-cd ../nci-curator
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
-cd ../lucene-search-tab
-git tag -d $TAG
-git push $TARGET :refs/tags/$TAG
 cd ../../nci-protege5
 git tag -d $TAG
 git push $TARGET :refs/tags/$TAG
