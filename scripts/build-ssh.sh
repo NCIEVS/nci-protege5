@@ -54,7 +54,8 @@ cd ..
 # Server-side plugins nci-curator and lucene-search-tab now build as modules of the protege reactor
 # above (same tag, same version), so there is no separate clone/build here. Their jars drive the
 # server's ServiceLoader entry points (CuratorOntologyClassifier, SearchTabProjectIndexBuilder).
-SRVLIB=protege/protege-editor-owl/target/server-distribution/server/lib
+# Absolute so `mvn dependency:copy -DoutputDirectory` below resolves it against CWD, not the -f pom basedir.
+SRVLIB="$(pwd)/protege/protege-editor-owl/target/server-distribution/server/lib"
 set -- protege/nci-curator/target/nci-curator-*.jar
 [ $# -eq 1 ] && [ -f "$1" ] || { echo "ERROR: expected exactly one nci-curator jar in target/, found: $*"; exit 1; }
 curator_jar="$1"
