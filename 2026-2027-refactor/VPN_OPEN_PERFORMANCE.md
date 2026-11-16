@@ -64,3 +64,32 @@ Same open workflow, measured from the client log (`protege.log`).
 | Date | Change | VPN open | Local open | Notes |
 |------|--------|----------|------------|-------|
 | 2026-11-16 | Baseline (no change) | ~2 min 49 s | ~14 s | Measurements above |
+| 2026-11-16 | Step 1: parallelize schema-seed `directTriples` batches | ~no change (schema load 128,358 ms) | — | **Disproved the target.** The schema has only **308 seed entities** → just **2** batches, so parallelizing them does nothing. The real cost is elsewhere (see Findings). |
+| 2026-11-16 | Instrumented full schema breakdown | schema load 124,530 ms | — | `seeds=935ms fetchClosure=38,618ms materialise=84,456ms rest=520ms`; `skolemClosure=36,557ms (127 round-trips)`. Two real targets: `materialise` (68%) and `skolemClosure` (31%). |
+| 2026-11-16 | **Fix A: batch-prime labels before `addAxioms`** (materialise) | *pending measurement* | — | `materialise` was ~308 per-entity label round-trips (308 × ~274 ms). Prefetch all schema-entity labels in one query so the renderer/index lookups during the bulk add are cache hits. |
+| 2026-11-16 | Fix A **confirmed** | schema load **40,513 ms** (from 124,530) | — | `materialise` **84,456 → 3,075 ms**. Schema load 3× faster. Remaining cost is `skolemClosure` (36 s, 89%). |
+| 2026-11-16 | **Fix B: chunked rdf:rest walk** (skolemClosure) | *pending measurement* | — | `owl:oneOf` list walk was 127 serial round-trips. Virtuoso rejects `rdf:rest*` (transitive) and nested OPTIONALs degrade past ~8 hops (K=8: 0.4 s, K=12: 12 s), so walk 8 hops/query with a boundary-only frontier → ~16 round-trips. Verify triple count stays **1371** (completeness). |
+| 2026-11-16 | Fix B **confirmed** | skolemClosure 34,111 → **30,008 ms**; schema load 40,513 → **38,009 ms** | — | Round-trips **127 → 16**, triples **1371** (complete, no truncation). But time barely moved: round-trips were *not* the bottleneck — baseline was 127 × ~268 ms (VPN latency), Fix B is 16 × ~1,875 ms (each 8-hop nested-OPTIONAL is expensive for Virtuoso to execute). The cost is the list walk itself, not the trips. **Next lever: defer the enumeration closure out of the open path (load on-demand) → removes ~30 s from every open.** |
+
+## Findings — 2026-11-16 (after step 1)
+
+The new schema-load timing shows `Lazily loaded schema: 2394 axioms from 308
+entities in 128358ms`, and the open window shows a **~120 s silent gap** (no new
+query-client log lines) running on the *shared* store. That signature points at
+`datatypeClosure() → skolemClosure()`, which walks the datatype `owl:oneOf`
+skolem/list chains **one Virtuoso round-trip per BFS level**. Deep lists ⇒ many
+sequential round-trips ⇒ ~120 s over the VPN. `skolemClosure` is now instrumented
+(`[perf] skolemClosure: … levels (round-trips) … in …ms`) to confirm the level
+count before rewriting it to fetch the closure in 1–2 queries instead of N levels.
+
+### Confirmed 2026-11-16 (instrumented)
+
+`[perf] skolemClosure: 21 seeds, 127 levels (round-trips), 1371 triples in 37503ms`
+— the datatype skolem walk is **127 serial Virtuoso round-trips = 37.5 s**. But the
+schema load is **125.8 s**, so there is a **second, larger cost (~85 s) after the
+closure**, in `materialise(...)` (which `addAxioms` ~2,394 axioms, firing change
+listeners) + `ensureOntologyAnnotationsLoaded(...)`. Full sub-step timing added
+(`[perf] schema breakdown: seeds=… fetchClosure=… materialise=… rest=…`) to split
+that 85 s before fixing. Two targets, then:
+1. `skolemClosure` — collapse the 127 per-level round-trips into 1–2 queries.
+2. the ~85 s post-closure step — pending the `materialise` vs `rest` split.
